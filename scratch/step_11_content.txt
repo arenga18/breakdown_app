@@ -1,0 +1,92 @@
+Created At: 2026-06-06T12:54:42Z
+Completed At: 2026-06-06T12:54:42Z
+File Path: `file:///Applications/Arenga/vscode/breakdown_app/src/components/ProjectPage.js`
+Total Lines: 328
+Total Bytes: 13867
+Showing lines 1 to 328
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useState } from 'react';
+2: import { s, Modal, FormGroup, FormRow, Badge } from './UI';
+3: import SpekPage from './SpekPage';
+4: import BreakdownPage from './BreakdownPage';
+5: import BOMPage from './BOMPage';
+6: import RekapPage from './RekapPage';
+7: import ReportPage from './ReportPage';
+8: import ProductionRekapPage from './ProductionRekapPage';
+9: import StockPage from './StockPage';
+10: import PartPage from './PartPage';
+11: import SetupItemPage from './SetupItemPage';
+12: import CategoryRefPage from './CategoryRefPage';
+13: import { defaultSpekVals } from '../defaultSpekVals';
+14: import { buildAliasMap, resolveAlias } from '../utils/resolveAlias';
+15: import { syncCategoriesWithSpek } from '../utils/categorySync';
+16: import { buildHashRoute } from '../utils/routeParser';
+17: 
+18: export default function ProjectPage({
+19:   projects,
+20:   moduls,
+21:   subModuls,
+22:   sections,
+23:   categories,
+24:   parts,
+25:   stock,
+26:   setupItems,
+27:   globalConstants = {},
+28:   onChange,
+29:   onTplChange,
+30:   onPartsChange,
+31:   onStockChange,
+32:   onSetupItemsChange,
+33:   projectId,
+34:   step,
+35:   subTab
+36: }) {
+37:   const [highlightedSpekField, setHighlightedSpekField] = useState(null);
+38: 
+39:   const activeId = projectId;
+40:   const stepVal = step || 'spek';
+41:   const breakdownTab = subTab || 'breakdown';
+42: 
+43:   const activeProject = projects.find(p => String(p.id) === String(activeId));
+44: 
+45:   React.useEffect(() => {
+46:     if (activeId && !activeProject) {
+47:       window.location.hash = '#/project';
+48:    
+<truncated 11847 bytes>
+fontWeight: breakdownTab === tab ? 600 : 400,
+295:                   cursor: 'pointer', fontSize: 13, color: '#111'
+296:                 }}
+297:                 onClick={() => changeRoute('breakdown', tab)}
+298:               >
+299:                 {tab === 'breakdown' ? 'Breakdown Komponen' : tab === 'stock' ? 'Cek Stock' : tab === 'part' ? 'Data Part' : tab === 'setup' ? 'Set-up' : 'Referensi'}
+300:               </button>
+301:             ))}
+302:           </div>
+303:           <button style={s.btnPrimary} onClick={() => changeRoute('bom')}>Lihat BOM Master →</button>
+304:         </div>
+305:       )}
+306: 
+307:       {stepVal === 'bom' && (
+308:         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderTop: '0.5px solid #d5d5cd', padding: '12px 20px', flexShrink: 0 }}>
+309:           <button style={s.btn} onClick={() => changeRoute('breakdown')}>← Kembali ke Breakdown</button>
+310:           <button style={s.btnPrimary} onClick={() => changeRoute('rekap')}>Lihat Hasil Rekap & Stok →</button>
+311:         </div>
+312:       )}
+313: 
+314:       {stepVal === 'rekap' && (
+315:         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderTop: '0.5px solid #d5d5cd', padding: '12px 20px', flexShrink: 0 }}>
+316:           <button style={s.btn} onClick={() => changeRoute('bom')}>← Kembali ke BOM</button>
+317:           <button style={s.btnPrimary} onClick={() => changeRoute('prod')}>Lihat Rekap Produksi (QC) →</button>
+318:         </div>
+319:       )}
+320: 
+321:       {stepVal === 'prod' && (
+322:         <div style={{ padding: '12px 20px', background: '#fff', borderTop: '0.5px solid #d5d5cd', textAlign: 'right', flexShrink: 0 }}>
+323:           <button style={s.btn} onClick={() => changeRoute('rekap')}>← Kembali ke Rekap Material</button>
+324:         </div>
+325:       )}
+326:     </div>
+327:   );
+328: }
+The above content shows the entire, complete file contents of the requested file.

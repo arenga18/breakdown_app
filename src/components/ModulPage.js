@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { s, Badge, Modal, FormGroup, FormRow, SearchableSelect } from './UI';
 import ModulTemplatePage from './ModulTemplatePage';
 
-export default function ModulPage({ data, parts, masterData, setupItems = [], subModuls = [], onChange }) {
+export default function ModulPage({ data, parts, masterData, setupItems = [], subModuls = [], categories = [], sections = [], stock = [], onChange }) {
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(getEmpty());
@@ -72,9 +72,56 @@ export default function ModulPage({ data, parts, masterData, setupItems = [], su
     setEditingTemplateId(null);
   }
 
+  function deleteModul(id) {
+    if (window.confirm("Apakah Anda yakin ingin menghapus modul master ini? Tindakan ini juga akan menghapus data di database.")) {
+      const next = data.filter(m => m.id !== id);
+      onChange(next);
+    }
+  }
+
+  function generateCabinetCode(m) {
+    const getCode = (key) => {
+      const field = dropdowns.find(d => d.key === key);
+      const items = masterData[field.source] || [];
+      const item = items.find(i => i.name === m[key]);
+      return item ? item.code : '';
+    };
+
+    const p1 = getCode('dunit');
+    const p2 = getCode('bbox') + getCode('fin') + getCode('plap') + getCode('ibox');
+    const p3 = getCode('stup') + getCode('jtutup') + getCode('jnistutup') + getCode('hndl');
+    const p4 = getCode('acc') + getCode('lmp') + getCode('plnt');
+
+    return [p1, p2, p3, p4].filter(p => p !== '').join('-');
+  }
+
+  function handleInlineChange(modulId, key, value) {
+    const next = data.map(m => {
+      if (m.id === modulId) {
+        const updated = { ...m, [key]: value };
+        updated.kabinet = generateCabinetCode(updated);
+        return updated;
+      }
+      return m;
+    });
+    onChange(next);
+  }
+
   if (editingTemplateId) {
     const modul = data.find(m => m.id === editingTemplateId);
-    return <ModulTemplatePage modul={modul} parts={parts} setupItems={setupItems} subModuls={subModuls} onBack={() => setEditingTemplateId(null)} onSave={saveTemplate} />;
+    return (
+      <ModulTemplatePage
+        modul={modul}
+        parts={parts}
+        setupItems={setupItems}
+        subModuls={subModuls}
+        categories={categories}
+        sections={sections}
+        stock={stock}
+        onBack={() => setEditingTemplateId(null)}
+        onSave={saveTemplate}
+      />
+    );
   }
 
   const filteredData = data.filter(m => {
@@ -95,6 +142,19 @@ export default function ModulPage({ data, parts, masterData, setupItems = [], su
     tutup: '#e9d8fd',
     acc: '#fed7aa',
     count: '#fdba74'
+  };
+
+  const selectStyle = {
+    background: 'transparent',
+    border: 'none',
+    width: '100%',
+    outline: 'none',
+    fontSize: 12,
+    padding: '3px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    color: '#333',
+    fontWeight: 500
   };
 
   return (
@@ -149,25 +209,116 @@ export default function ModulPage({ data, parts, masterData, setupItems = [], su
                   <td style={s.td}>{m.nip}</td>
                   <td style={s.td}>{m.tinggi}</td>
                   <td style={s.td}>{m.proyek}</td>
-                  <td style={{ ...s.td, color: '#b91c1c', background: bgColors.kode, fontWeight: '500' }}>
+                  <td style={{ ...s.td, color: '#b91c1c', background: bgColors.kode, fontWeight: '600' }}>
                     {m.kabinet}
                   </td>
-                  <td style={{ ...s.td, background: bgColors.desc }}>{m.dunit || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.desc }}>{m.bbox || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.desc }}>{m.fin || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.desc }}>{m.plap || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.desc }}>{m.ibox || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.tutup }}>{m.stup || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.tutup }}>{m.jtutup || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.tutup }}>{m.jnistutup || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.tutup }}>{m.hndl || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.acc }}>{m.acc || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.acc }}>{m.lmp || '-'}</td>
-                  <td style={{ ...s.td, background: bgColors.acc }}>{m.plnt || '-'}</td>
+                  
+                  {/* Deskripsi Unit */}
+                  <td style={{ ...s.td, background: bgColors.desc, padding: '2px 4px' }}>
+                    <select value={m.dunit || ''} onChange={e => handleInlineChange(m.id, 'dunit', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.deskripsiUnit || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Bentuk Box */}
+                  <td style={{ ...s.td, background: bgColors.desc, padding: '2px 4px' }}>
+                    <select value={m.bbox || ''} onChange={e => handleInlineChange(m.id, 'bbox', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.bentukBox || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Finishing */}
+                  <td style={{ ...s.td, background: bgColors.desc, padding: '2px 4px' }}>
+                    <select value={m.fin || ''} onChange={e => handleInlineChange(m.id, 'fin', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.finishing || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Posisi Lapisan */}
+                  <td style={{ ...s.td, background: bgColors.desc, padding: '2px 4px' }}>
+                    <select value={m.plap || ''} onChange={e => handleInlineChange(m.id, 'plap', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.posisiLapisan || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Isi Box */}
+                  <td style={{ ...s.td, background: bgColors.desc, padding: '2px 4px' }}>
+                    <select value={m.ibox || ''} onChange={e => handleInlineChange(m.id, 'ibox', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.isiBox || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Sistem Tutup */}
+                  <td style={{ ...s.td, background: bgColors.tutup, padding: '2px 4px' }}>
+                    <select value={m.stup || ''} onChange={e => handleInlineChange(m.id, 'stup', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.sistemTutup || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Jumlah Tutup */}
+                  <td style={{ ...s.td, background: bgColors.tutup, padding: '2px 4px' }}>
+                    <select value={m.jtutup || ''} onChange={e => handleInlineChange(m.id, 'jtutup', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.jumlahTutup || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Jenis Tutup */}
+                  <td style={{ ...s.td, background: bgColors.tutup, padding: '2px 4px' }}>
+                    <select value={m.jnistutup || ''} onChange={e => handleInlineChange(m.id, 'jnistutup', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.jenisTutup || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Handle */}
+                  <td style={{ ...s.td, background: bgColors.tutup, padding: '2px 4px' }}>
+                    <select value={m.hndl || ''} onChange={e => handleInlineChange(m.id, 'hndl', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.handle || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Accessories */}
+                  <td style={{ ...s.td, background: bgColors.acc, padding: '2px 4px' }}>
+                    <select value={m.acc || ''} onChange={e => handleInlineChange(m.id, 'acc', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.accessories || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Lampu */}
+                  <td style={{ ...s.td, background: bgColors.acc, padding: '2px 4px' }}>
+                    <select value={m.lmp || ''} onChange={e => handleInlineChange(m.id, 'lmp', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.lampu || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
+                  {/* Plinth */}
+                  <td style={{ ...s.td, background: bgColors.acc, padding: '2px 4px' }}>
+                    <select value={m.plnt || ''} onChange={e => handleInlineChange(m.id, 'plnt', e.target.value)} style={selectStyle}>
+                      <option value="">-</option>
+                      {(masterData.plinth || []).map((opt, idx) => <option key={`${opt.code || ''}_${opt.name || ''}_${idx}`} value={opt.name}>{opt.name}</option>)}
+                    </select>
+                  </td>
+
                   <td style={{ ...s.td, textAlign: 'center', fontWeight: 'bold', background: bgColors.count }}>{count}</td>
                   <td style={{ ...s.td, textAlign:'right' }}>
                     <button style={s.btnSm} onClick={() => setEditingTemplateId(m.id)}>
                       Atur Template ({m.komponen ? m.komponen.length : 0})
+                    </button>
+                    <button
+                      style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none', marginLeft: 8 }}
+                      onClick={() => deleteModul(m.id)}
+                    >
+                      Hapus
                     </button>
                   </td>
                 </tr>

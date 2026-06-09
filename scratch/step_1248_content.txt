@@ -1,0 +1,1 @@
+I will search for usage of the `buildHashRoute` function to find where routing was integrated into the application.

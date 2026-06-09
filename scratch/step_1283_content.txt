@@ -1,0 +1,73 @@
+Created At: 2026-06-09T09:06:22Z
+Completed At: 2026-06-09T09:06:22Z
+File Path: `file:///Applications/Arenga/vscode/breakdown_app/scratch/extracted_routing_history.txt`
+Total Lines: 1255
+Total Bytes: 74012
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: 
+2: =========================================
+3: STEP: 11 SOURCE: MODEL TYPE: VIEW_FILE
+4: CONTENT:
+5: Created At: 2026-06-06T12:54:42Z
+6: Completed At: 2026-06-06T12:54:42Z
+7: File Path: `file:///Applications/Arenga/vscode/breakdown_app/src/components/ProjectPage.js`
+8: Total Lines: 328
+9: Total Bytes: 13867
+10: Showing lines 1 to 328
+11: The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+12: 1: import React, { useState } from 'react';
+13: 2: import { s, Modal, FormGroup, FormRow, Badge } from './UI';
+14: 3: import SpekPage from './SpekPage';
+15: 4: import BreakdownPage from './BreakdownPage';
+16: 5: import BOMPage from './BOMPage';
+17: 6: import RekapPage from './RekapPage';
+18: 7: import ReportPage from './ReportPage';
+19: 8: import ProductionRekapPage from './ProductionRekapPage';
+20: 9: import StockPage from './StockPage';
+21: 10: import PartPage from './PartPage';
+22: 11: import SetupItemPage from './SetupItemPage';
+23: 12: import CategoryRefPage from './CategoryRefPage';
+24: 13: import { defaultSpekVals } from '../defaultSpekVals';
+25: 14: import { buildAliasMap, resolveAlias } from '../utils/resolveAlias';
+26: 15: import { syncCategoriesWithSpek } from '../utils/categorySync';
+27: 16: import { buildHashRoute } from '../utils/routeParser';
+28: 17: 
+29: 18: export default function ProjectPage({
+30: 19:   projects,
+31: 20:   moduls,
+32: 21:   subModuls,
+33:
+<truncated 39356 bytes>
+nents/ModuleEditor.js
+771: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/PartPage.js
+772: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SubModulTemplatePage.js
+773: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ModulTemplatePage.js
+774: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/App.js
+775: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ModulPage.js
+776: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ProjectPage.js
+777: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/CategoryPage.js
+778: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/RekapPage.js
+779: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/StockPage.js
+780: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SubModulPage.js
+781: Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ReportPage.js
+782: 
+783: 
+784: =========================================
+785: 
+786: =========================================
+787: STEP: 1079 SOURCE: MODEL TYPE: RUN_COMMAND
+788: CONTENT:
+789: Created At: 2026-06-09T08:53:57Z
+790: Completed At: 2026-06-09T08:53:57Z
+791: 
+792: 				The command completed successfully.
+793: 				Output:
+794: 				On branch main
+795: Your branch is up to date with 'origin/main'.
+796: 
+797: Changes not staged for commit:
+798:   (use "git add <file>..." to update what will be committed)
+799:   (use "git restore <file>..." to discard changes in working directory)
+800: 	modified:   src/App.js
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -1,0 +1,67 @@
+Created At: 2026-06-09T09:05:29Z
+Completed At: 2026-06-09T09:05:29Z
+File Path: `file:///Applications/Arenga/vscode/breakdown_app/src/utils/routeParser.js`
+Total Lines: 59
+Total Bytes: 1379
+Showing lines 1 to 59
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: /**
+2:  * Parses a hash route string (e.g. "#/project/123/breakdown/stock") into structured page state.
+3:  */
+4: export function parseHashRoute(hash) {
+5:   const path = hash.replace(/^#/, '');
+6:   if (!path || path === '/') {
+7:     return { page: 'modul' };
+8:   }
+9: 
+10:   const parts = path.split('/').filter(Boolean);
+11:   const page = parts[0];
+12: 
+13:   if (page === 'project') {
+14:     const rawId = parts[1];
+15:     let projectId = null;
+16:     if (rawId) {
+17:       projectId = /^\d+$/.test(rawId) ? parseInt(rawId, 10) : rawId;
+18:     }
+19:     const step = parts[2] || 'spek';
+20:     const subTab = parts[3] || 'breakdown';
+21:     return {
+22:       page: 'project',
+23:       projectId,
+24:       step,
+25:       subTab
+26:     };
+27:   }
+28: 
+29:   if (page === 'configuration') {
+30:     const subPage = parts[1];
+31:     return {
+32:       page: subPage || 'category'
+33:     };
+34:   }
+35: 
+36:   return {
+37:     page
+38:   };
+39: }
+40: 
+41: /**
+42:  * Builds a hash route string from structured page state parameters.
+43:  */
+44: export function buildHashRoute({ page, projectId, step, subTab }) {
+45:   if (page === 'project') {
+46:     if (projectId) {
+47:       if (step === 'breakdown') {
+48:         return `#/project/${projectId}/breakdown/${subTab || 'breakdown'}`;
+49:       }
+50:       return `#/project/${projectId}/${step || 'spek'}`;
+51:     }
+52:     return `#/project`;
+53:   }
+54:   if (['category', 'stock', 'part', 'submodul', 'setup', 'masterModul'].includes(page)) {
+55:     return `#/configuration/${page}`;
+56:   }
+57:   return `#/${page}`;
+58: }
+59: 
+The above content shows the entire, complete file contents of the requested file.

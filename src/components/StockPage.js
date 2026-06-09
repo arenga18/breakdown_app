@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { s, Modal, FormGroup, FormRow, Badge } from './UI';
 
-const empty = { id: '', kat: '', nama: '', jml: '', sat: '', ket: '' };
+const empty = { id: '', kat: '', nama: '', tebal: '', sat: '', ket: '' };
 
 function getPageNumbers(current, total) {
   const pages = [];
@@ -90,15 +90,15 @@ export default function StockPage({ data, onChange, readOnly = false }) {
               <th style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600, width: 140 }}>Kategori</th>
               <th style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600, width: 100 }}>ID Barang</th>
               <th style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600 }}>Nama Barang</th>
-              <th style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 600, width: 70 }}>Jml</th>
+              <th style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 600, width: 70 }}>Tebal</th>
               <th style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600, width: 80 }}>Satuan</th>
               <th style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600 }}>Keterangan</th>
               {!readOnly && <th style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 600, width: 60 }}>Aksi</th>}
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
-              <tr><td colSpan={readOnly ? 7 : 8} style={s.empty}>Data tidak ditemukan</td></tr>
+              {filtered.length === 0 ? (
+              <tr><td colSpan={readOnly ? 6 : 7} style={s.empty}>Data tidak ditemukan</td></tr>
             ) : paginatedData.map((item, i) => {
               const realIdx = data.indexOf(item);
               return (
@@ -109,7 +109,7 @@ export default function StockPage({ data, onChange, readOnly = false }) {
                       style={cellInput} 
                       value={item.kat} 
                       onChange={e => handleUpdate(realIdx, 'kat', e.target.value)} 
-                      placeholder="Kategori..."
+                      placeholder=""
                     />
                   </td>
                   <td style={{ padding: '6px 14px' }}>
@@ -117,7 +117,7 @@ export default function StockPage({ data, onChange, readOnly = false }) {
                       style={{ ...cellInput, fontFamily: 'monospace', fontSize: 12 }} 
                       value={item.id} 
                       onChange={e => handleUpdate(realIdx, 'id', e.target.value)} 
-                      placeholder="ID..."
+                      placeholder=""
                     />
                   </td>
                   <td style={{ padding: '6px 14px' }}>
@@ -125,15 +125,15 @@ export default function StockPage({ data, onChange, readOnly = false }) {
                       style={{ ...cellInput, fontWeight: 500 }} 
                       value={item.nama} 
                       onChange={e => handleUpdate(realIdx, 'nama', e.target.value)} 
-                      placeholder="Nama barang..."
+                      placeholder=""
                     />
                   </td>
                   <td style={{ padding: '6px 14px', textAlign: 'center' }}>
                     <input 
                       style={{ ...cellInput, textAlign: 'center' }} 
                       type="number"
-                      value={item.jml} 
-                      onChange={e => handleUpdate(realIdx, 'jml', e.target.value)} 
+                      value={item.tebal} 
+                      onChange={e => handleUpdate(realIdx, 'tebal', e.target.value)} 
                     />
                   </td>
                   <td style={{ padding: '6px 14px' }}>
@@ -141,7 +141,7 @@ export default function StockPage({ data, onChange, readOnly = false }) {
                       style={cellInput} 
                       value={item.sat} 
                       onChange={e => handleUpdate(realIdx, 'sat', e.target.value)} 
-                      placeholder="Sat..."
+                      placeholder=""
                     />
                   </td>
                   <td style={{ padding: '6px 14px' }}>
@@ -149,7 +149,7 @@ export default function StockPage({ data, onChange, readOnly = false }) {
                       style={{ ...cellInput, color: '#666', fontSize: 12 }} 
                       value={item.ket} 
                       onChange={e => handleUpdate(realIdx, 'ket', e.target.value)} 
-                      placeholder="Ket..."
+                      placeholder=""
                     />
                   </td>
                   {!readOnly && (
@@ -298,8 +298,8 @@ export default function StockPage({ data, onChange, readOnly = false }) {
           </FormGroup>
         </FormRow>
         <FormRow>
-          <FormGroup label="Jumlah">
-            <input style={s.input} type="number" value={form.jml} onChange={f('jml')} placeholder="0" />
+          <FormGroup label="Tebal">
+            <input style={s.input} type="number" value={form.tebal} onChange={f('tebal')} placeholder="0" />
           </FormGroup>
           <FormGroup label="Satuan">
             <input style={s.input} value={form.sat} onChange={f('sat')} placeholder="Lbr / pcs / mtr" />

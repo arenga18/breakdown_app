@@ -1,0 +1,33 @@
+Created At: 2026-06-08T06:41:44Z
+Completed At: 2026-06-08T06:41:44Z
+File Path: `file:///Applications/Arenga/vscode/breakdown_app/src/App.js`
+Total Lines: 584
+Total Bytes: 26314
+Showing lines 1 to 25
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useState, useEffect } from 'react';
+2: import { migrateAllToBackend } from './api/migrate';
+3: import { initialState } from './initialState';
+4: import { api } from './api/client';
+5: import { syncStateWithDB } from './api/sync';
+6: import { s } from './components/UI';
+7: import StockPage from './components/StockPage';
+8: import PartPage from './components/PartPage';
+9: import CategoryPage from './components/CategoryPage';
+10: import ModulPage from './components/ModulPage';
+11: import ModulMasterPage from './components/ModulMasterPage';
+12: import ProjectPage from './components/ProjectPage';
+13: import SubModulPage from './components/SubModulPage';
+14: import SetupItemPage from './components/SetupItemPage';
+15: import DefinedNamesPage from './components/DefinedNamesPage';
+16: import { buildStockDerivedCategories } from './utils/stockCategoryMap';
+17: import { parseHashRoute, buildHashRoute } from './utils/routeParser';
+18: import { autoFillRowFromPart } from './utils/autoFill';
+19: 
+20: const PAGES = [
+21:   { key: 'modul', label: 'Modul' },
+22:   { key: 'project', label: 'Project' },
+23: ];
+24: 
+25: // Aliases that belong to "Lapisan Standard" section
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -3,9 +3,12 @@ import { s } from './UI';
 import ModuleEditor from './ModuleEditor';
 import { FormulaInput } from './SharedModuleTable';
 import { evaluateFormula } from '../utils/calc';
+import { getColLetter } from '../utils/colMap';
+import { resolveAlias, buildAliasMap } from '../utils/resolveAlias';
+import { resolveLapisanFromCode, getFinishingThickness, getPartDefaultValue, isFinishingEmpty } from '../utils/breakdownCalc';
+import { defaultSpekVals } from '../defaultSpekVals';
 
-
-export default function ModulTemplatePage({ modul, parts, setupItems = [], subModuls = [], onBack, onSave }) {
+export default function ModulTemplatePage({ modul, parts, setupItems = [], subModuls = [], categories = [], sections = [], stock = [], onBack, onSave }) {
   const [data, setData] = useState(modul.komponen || []);
   const [header, setHeader] = useState({
     kabinet: modul.kabinet || '',
@@ -20,9 +23,58 @@ export default function ModulTemplatePage({ modul, parts, setupItems = [], subMo
   const [activeInput, setActiveInput] = useState(null);
   const [selectedCoord, setSelectedCoord] = useState(null);
 
-  const refCoords = useMemo(() => {
-    if (!activeInput || !activeInput.value?.toString().startsWith('=')) return [];
-    return activeInput.value.toString().match(/(?:[A-Z]{1,2})\d+/g) || [];
+  // Construct a fallback/default spec using current sections and categories for formula evaluations
+  const spec = useMemo(() => {
+    const defaultSpec = {
+      vals: defaultSpekVals,
+      aliases: {},
+      kodes: {},
+      categories: categories
+    };
+    sections.forEach(sec => {
+      sec.rows.forEach(row => {
+        const key = sec.name + '||' + row.label;
+        if (row.alias) {
+          defaultSpec.aliases[key] = row.alias;
+        }
+      });
+    });
+    return defaultSpec;
+  }, [categories, sections]);
+
+  // Derive dropdown options dynamically from stock/categories
+  const hplOptions = useMemo(() => {
+    const hplStock = stock.filter(s => (s.kat || '').toLowerCase() === 'hpl');
+    if (hplStock.length > 0) return hplStock.map(s => s.nama || s.kode || '');
+    // Fallback to categories
+    const catLuar = categories.find(c => c.code === 'lap_luar');
+    const catDalam = categories.find(c => c.code === 'lap_dalam');
+    const catHpl = categories.find(c => c.code === 'HPL');
+    const luarItems = catLuar ? catLuar.items : (catHpl ? catHpl.items : ['HB_41130', 'Aica', 'DSK_5450_SM', 'SK_10455_UW', 'GM_86', 'DXP_5342_XM', 'Duco', 'Polos']);
+    const dalamItems = catDalam ? catDalam.items : ['HB_41130', 'Aica', 'Melanor', 'Polos'];
+    const luarNames = luarItems.map(x => typeof x === 'string' ? x : x.name || '');
+    const dalamNames = dalamItems.map(x => typeof x === 'string' ? x : x.name || '');
+    return [...new Set([...luarNames, ...dalamNames])];
+  }, [stock, categories]);
+
+  const edgOptions = useMemo(() => {
+    const edgStock = stock.filter(s => (s.kat || '').toLowerCase() === 'edg');
+    if (edgStock.length > 0) return edgStock.map(s => s.nama || s.kode || '');
+    // Fallback to categories
+    const cat = categories.find(c => c.code === 'edg') || categories.find(c => c.code === 'EDG');
+    const items = cat ? cat.items : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'];
+    return items.map(x => typeof x === 'string' ? x : x.name || '');
+  }, [stock, categories]);
+
+  const bhnOptions = useMemo(() => {
+    const cat = categories.find(c => c.code === 'bhn') || categories.find(c => c.code === 'BHN');
+    const items = cat ? cat.items : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC'];
+    return items.map(x => typeof x === 'string' ? x : x.name || '');
+  }, [categories]);
+
+  const refCoordsStr = useMemo(() => {
+    if (!activeInput || !activeInput.value?.toString().startsWith('=')) return '';
+    return (activeInput.value.toString().match(/(?:[A-Z]{1,2})\d+/g) || []).join(',');
   }, [activeInput]);
 
   const handleCellClick = (coord) => {
@@ -54,63 +106,83 @@ export default function ModulTemplatePage({ modul, parts, setupItems = [], subMo
             parts={parts}
             setupItems={setupItems}
             subModuls={subModuls}
+            spec={spec}
+            hplOptions={hplOptions}
+            edgOptions={edgOptions}
+            bhnOptions={bhnOptions}
             mode="template"
             badgeText="TEMPLATE"
             onChange={(h, i) => { setHeader(h); setData(i); }}
             onCellClick={handleCellClick}
             isRefMode={activeInput && activeInput.value?.toString().startsWith('=')}
             selectedCoord={selectedCoord}
-            refCoords={refCoords}
+            refCoordsStr={refCoordsStr}
             renderCustomCell={(item, idx, key) => {
-                const rowNum = (item._idx !== undefined ? item._idx : idx + 1) + 1;
-                const getColLetter = (k) => {
-                    if (k === 'cat') return 'B';
-                    if (k === 'type') return 'C';
-                    if (k === 'kode') return 'D';
-                    if (k === 'tpk') return 'E';
-                    if (k === 'no') return 'F';
-                    if (k === 'komp') return 'G';
-                    if (k === 'p') return 'H';
-                    if (k === 'l') return 'I';
-                    if (k === 't') return 'J';
-                    if (k === 'sub') return 'K';
-                    if (k === 'jml') return 'L';
-                    if (k === 'bhn') return 'M';
-                    if (k === 't_bhn') return 'N';
-                    if (k === 'l_fin') return 'O';
-                    if (k === 'd_fin') return 'P';
-                    if (k === 'p1') return 'Q';
-                    if (k === 'p2') return 'R';
-                    if (k === 'l1') return 'S';
-                    if (k === 'l2') return 'T';
-                    if (k === 'lap_luar') return 'U';
-                    if (k === 'lap_dalam') return 'V';
-                    if (k === 'edg_p1') return 'W';
-                    if (k === 'edg_p2') return 'X';
-                    if (k === 'edg_l1') return 'Y';
-                    if (k === 'edg_l2') return 'Z';
-                    if (k === 'q_engsel') return 'AA';
-                    if (k === 'q_rel') return 'AB';
-                    if (k === 'q_dormec') return 'AC';
-                    if (k === 'q_minifix') return 'AD';
-                    if (k === 'q_dowel') return 'AE';
-                    return k.toUpperCase();
-                };
+                const isParent = idx === -1;
+                const rowNum = isParent ? 1 : (item._idx !== undefined ? item._idx : idx + 1) + 1;
                 const colLetter = getColLetter(key);
                 const cellCoord = `${colLetter}${rowNum}`;
-                const centerCols = ['B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'AA', 'AB', 'AC', 'AD', 'AE'];
+                const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
                 const textAlign = centerCols.includes(colLetter) ? 'center' : 'right';
+
+                // Evaluate formula
+                let evaluatedVal = evaluateFormula(
+                  item[key], 
+                  [header, ...data], 
+                  spec, 
+                  isParent ? {} : header, 
+                  0, 
+                  setupItems
+                );
+
+                // Auto-derive dynamic lookup values for hardware, profiling, anodizing from partsData
+                const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize'];
+                if (!isParent && !item[key] && lookupKeys.includes(key)) {
+                  const compName = evaluateFormula(item.komp, [header, ...data], spec, header, 0, setupItems);
+                  const defaultVal = getPartDefaultValue(compName, key);
+                  if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
+                    evaluatedVal = defaultVal;
+                  }
+                }
+
+                // Auto-derive dynamic thickness for empty finishing layer thickness cells
+                if (!isParent && !item[key]) {
+                  if (key === 't_luar') {
+                    const lFinEval = evaluateFormula(item.l_fin, [header, ...data], spec, header, 0, setupItems);
+                    let resolvedLapLuar = '';
+                    if (!isFinishingEmpty(lFinEval)) {
+                      resolvedLapLuar = resolveLapisanFromCode(lFinEval, spec?.categories || []) || '';
+                    }
+                    if (resolvedLapLuar) {
+                      evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapLuar, buildAliasMap(spec)), spec?.categories || []);
+                    }
+                  } else if (key === 't_dalam') {
+                    const dFinEval = evaluateFormula(item.d_fin, [header, ...data], spec, header, 0, setupItems);
+                    let resolvedLapDalam = '';
+                    if (!isFinishingEmpty(dFinEval)) {
+                      resolvedLapDalam = resolveLapisanFromCode(dFinEval, spec?.categories || []) || '';
+                    }
+                    if (resolvedLapDalam) {
+                      evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapDalam, buildAliasMap(spec)), spec?.categories || []);
+                    }
+                  }
+                }
+
                 return (
                     <FormulaInput 
                         value={item[key]} 
                         textAlign={textAlign}
-                        evaluated={evaluateFormula(item[key], [header, ...data], {}, header)}
+                        evaluated={evaluatedVal}
                         onFocus={(setter) => setActiveInput({ value: item[key], setter, coord: cellCoord })}
-                        onBlur={() => setActiveInput(null)}
+                        onBlur={() => setActiveInput(prev => (prev && prev.coord === cellCoord) ? null : prev)}
                         onChange={v => {
-                            const nextItems = [...data];
-                            nextItems[idx] = { ...nextItems[idx], [key]: v };
-                            setData(nextItems);
+                            if (isParent) {
+                                setHeader(prev => ({ ...prev, [key]: v }));
+                            } else {
+                                const nextItems = [...data];
+                                nextItems[idx] = { ...nextItems[idx], [key]: v };
+                                setData(nextItems);
+                            }
                             if (activeInput) setActiveInput({ value: v, setter: activeInput.setter, coord: cellCoord });
                         }} 
                     />

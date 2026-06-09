@@ -1,0 +1,10 @@
+{
+  "CaseInsensitive": "false",
+  "Includes": "[\"*.js\"]",
+  "IsRegex": "false",
+  "MatchPerLine": "true",
+  "Query": "\"buildHashRoute\"",
+  "SearchPath": "\"/Applications/Arenga/vscode/breakdown_app/src\"",
+  "toolAction": "\"Searching for buildHashRoute usage\"",
+  "toolSummary": "\"Grep search\""
+}

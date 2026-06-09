@@ -1,6 +1,38 @@
 import React, { useState } from 'react';
 import { s, Modal, FormGroup, FormRow, Badge } from './UI';
 import TemplatePage from './TemplatePage';
+import { getFinishingThickness } from '../utils/breakdownCalc';
+import { lookupCat } from '../utils/categoryLookup';
+
+const STATIC_KODE_MAP = {
+  'kabinet1': '11',
+  'kabinet2': '22',
+  'kabinet3': '33',
+  'lapisan1': '1',
+  'lapisan2': '2',
+  'lapisan3': '3',
+  'lapisan4': '4',
+  'lapisan5': '5',
+  'lapisan6': '6',
+  'lapisan7': '7',
+  'tip_lap_inv': '9',
+  'lap_blk_pintu': '11',
+  'lap_inv_kab': '0',
+  'lap_pintu_mlp': '0'
+};
+
+function getStaticSpekCode(alias) {
+  if (!alias) return '';
+  return STATIC_KODE_MAP[alias] || '';
+}
+
+function getHplThicknessText(value, categories) {
+  if (!value || value === '-- pilih --' || value === '') {
+    return '#N/A';
+  }
+  const tebal = getFinishingThickness(value, categories);
+  return String(tebal).replace('.', ',');
+}
 
 const emptyInfo = { tanggal: '', norekap: '', estimator: '', koord: '', kontrak: '', nip: '', produk: '', proyek: '', statusPend: false, statusTidakPend: false, statusAntiRayap: false, statusTidakAntiRayap: false, modulRefs: [] };
 
@@ -10,35 +42,138 @@ function makeVals(sections) {
   return vals;
 }
 
-export default function SpekPage({ speks, sections, categories, moduls = [], onChange, onTplChange, isProjectForm }) {
+// ─── Design tokens ───────────────────────────────────────────────────────────
+const COLOR = {
+  bg: '#f7f7f5',
+  surface: '#ffffff',
+  border: '#e8e8e2',
+  borderLight: '#f0f0ea',
+  text: '#1a1a1a',
+  textMuted: '#6b7280',
+  textFaint: '#9ca3af',
+  accent: '#111827',
+  accentHover: '#374151',
+  blue: '#2563eb',
+  blueBg: '#eff6ff',
+  blueBorder: '#dbeafe',
+  green: '#166534',
+  sectionHeader: '#f4f4f0',
+};
+
+const baseInputStyle = {
+  width: '100%',
+  padding: '7px 0',
+  borderRadius: 0,
+  border: 'none',
+  borderBottom: `1.5px solid ${COLOR.border}`,
+  background: 'transparent',
+  fontFamily: 'inherit',
+  fontSize: 13,
+  color: COLOR.text,
+  outline: 'none',
+  transition: 'border-color 0.15s',
+  boxSizing: 'border-box',
+};
+
+const cardStyle = {
+  background: COLOR.surface,
+  border: `1px solid ${COLOR.border}`,
+  borderRadius: 12,
+  overflow: 'hidden',
+  marginBottom: 16,
+};
+
+const sectionHeaderStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '10px 18px',
+  background: COLOR.sectionHeader,
+  borderBottom: `1px solid ${COLOR.border}`,
+  cursor: 'pointer',
+  userSelect: 'none',
+};
+
+const sectionTitleStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: COLOR.textMuted,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function SpekPage({ speks, sections, categories, stock = [], moduls = [], onChange, onTplChange, isProjectForm, highlightedField, onClearHighlight }) {
   const [activeIdx, setActiveIdx] = useState(isProjectForm ? 0 : null);
   const [newModal, setNewModal] = useState(false);
   const [showTpl, setShowTpl] = useState(false);
   const [newForm, setNewForm] = useState({ ...emptyInfo });
   const [localVals, setLocalVals] = useState({});
+  const [localKodes, setLocalKodes] = useState({});
   const [localInfo, setLocalInfo] = useState({});
   const [saved, setSaved] = useState(false);
   const [aliasKey, setAliasKey] = useState(null);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [showModulRef, setShowModulRef] = useState(false);
   const [refSearch, setRefSearch] = useState('');
+  const [tempHighlight, setTempHighlight] = useState(null);
+
+  React.useEffect(() => {
+    if (highlightedField) {
+      const parts = highlightedField.split('||');
+      if (parts.length === 2) {
+        const secName = parts[0];
+        setCollapsedSections(prev => ({ ...prev, [secName]: false }));
+      }
+      
+      const timer = setTimeout(() => {
+        const el = document.getElementById(highlightedField);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTempHighlight(highlightedField);
+          
+          const clearTimer = setTimeout(() => {
+            setTempHighlight(null);
+            if (onClearHighlight) onClearHighlight();
+          }, 3000);
+          
+          return () => clearTimeout(clearTimer);
+        } else {
+          if (onClearHighlight) onClearHighlight();
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedField, onClearHighlight]);
 
   const toggleSection = (name) => setCollapsedSections(prev => ({ ...prev, [name]: !prev[name] }));
-
   const getCat = code => categories.find(c => c.code === code) || null;
 
-  function openNew() {
-    setNewForm({ ...emptyInfo, tanggal: new Date().toISOString().slice(0, 10) });
-    setNewModal(true);
+  function initAliasesFromSections(spek) {
+    const nextAliases = { ...(spek.aliases || {}) };
+    let changed = false;
+    sections.forEach(sec => {
+      sec.rows.forEach(row => {
+        const key = sec.name + '||' + row.label;
+        if (row.alias && !nextAliases[key]) { nextAliases[key] = row.alias; changed = true; }
+      });
+    });
+    return changed ? { ...spek, aliases: nextAliases } : spek;
   }
+
+  function openNew() { setNewForm({ ...emptyInfo, tanggal: new Date().toISOString().slice(0, 10) }); setNewModal(true); }
   function saveNew() {
     if (!newForm.norekap && !newForm.produk) return;
-    const spek = { ...newForm, vals: makeVals(sections) };
+    let spek = { ...newForm, vals: makeVals(sections), kodes: {} };
+    spek = initAliasesFromSections(spek);
     const next = [...speks, spek];
     onChange(next);
     setActiveIdx(next.length - 1);
     setLocalVals(spek.vals);
-    setLocalInfo({ ...newForm });
+    setLocalKodes({});
+    setLocalInfo({ ...spek });
     setNewModal(false);
   }
   function deleteSpek(i) {
@@ -47,25 +182,55 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
     setActiveIdx(next.length > 0 ? Math.min(i, next.length - 1) : null);
   }
   function selectSpek(i) {
+    const updatedSpek = initAliasesFromSections(speks[i]);
     setActiveIdx(i);
-    setLocalVals({ ...speks[i].vals });
-    setLocalInfo({ ...speks[i] });
+    setLocalVals({ ...updatedSpek.vals });
+    setLocalKodes({ ...(updatedSpek.kodes || {}) });
+    setLocalInfo({ ...updatedSpek });
     setSaved(false);
   }
   function saveValues() {
     if (activeIdx === null) return;
-    const next = speks.map((sp, i) => i === activeIdx ? { ...sp, ...localInfo, vals: { ...localVals } } : sp);
+    const next = speks.map((sp, i) => i === activeIdx ? { ...sp, ...localInfo, vals: { ...localVals }, kodes: { ...localKodes } } : sp);
     onChange(next);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
   function setVal(key, val) {
+    let source = '';
+    for (const sec of sections) {
+      const foundRow = sec.rows.find(r => (sec.name + '||' + r.label) === key);
+      if (foundRow) {
+        source = foundRow.source;
+        break;
+      }
+    }
+
+    let kodeVal = '';
+    if (source) {
+      const cat = getCat(source);
+      if (cat && Array.isArray(cat.items)) {
+        const foundItem = cat.items.find(item => {
+          const normalized = typeof item === 'string'
+            ? { code: '', name: item }
+            : item;
+          return normalized.name === val;
+        });
+        if (foundItem && typeof foundItem === 'object') {
+          kodeVal = foundItem.code || '';
+        }
+      }
+    }
+
     setLocalVals(p => ({ ...p, [key]: val }));
+    setLocalKodes(p => ({ ...p, [key]: kodeVal }));
     setSaved(false);
+
     if (isProjectForm) {
       const nextVals = { ...localVals, [key]: val };
-      const nextAliases = { ...(speks[0].aliases || {}) };
-      onChange([{ ...speks[0], ...localInfo, vals: nextVals, aliases: nextAliases }]);
+      const nextKodes = { ...localKodes, [key]: kodeVal };
+      const nextAliases = { ...(localInfo.aliases || {}) };
+      onChange([{ ...speks[0], ...localInfo, vals: nextVals, kodes: nextKodes, aliases: nextAliases }]);
     }
   }
   function setAlias(key, alias) {
@@ -73,8 +238,30 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
     setSaved(false);
     const nextAliases = { ...(localInfo.aliases || {}), [key]: cleanAlias };
     setLocalInfo(p => ({ ...p, aliases: nextAliases }));
-    if (isProjectForm) {
-      onChange([{ ...speks[0], ...localInfo, vals: { ...localVals }, aliases: nextAliases }]);
+    if (isProjectForm) onChange([{ ...speks[0], ...localInfo, vals: { ...localVals }, kodes: { ...localKodes }, aliases: nextAliases }]);
+  }
+  function setKode(key, kodeVal) {
+    const nextKodes = { ...localKodes, [key]: kodeVal };
+    setLocalKodes(nextKodes);
+    setSaved(false);
+    if (isProjectForm) onChange([{ ...speks[0], ...localInfo, vals: { ...localVals }, kodes: nextKodes }]);
+  }
+  function handleStandardKodeChange(key, newKode) {
+    const nextKodes = { ...localKodes, [key]: newKode };
+    setLocalKodes(nextKodes);
+    setSaved(false);
+
+    const newVal = lookupCat(categories, 'tf', newKode) || '';
+    const nextVals = { ...localVals, [key]: newVal };
+    setLocalVals(nextVals);
+
+    if (isProjectForm && speks.length > 0) {
+      onChange([{
+        ...speks[0],
+        ...localInfo,
+        vals: nextVals,
+        kodes: nextKodes
+      }]);
     }
   }
   function setInfo(k) {
@@ -89,25 +276,19 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
     };
   }
 
-  // Effect to load data if isProjectForm
   React.useEffect(() => {
     if (isProjectForm && speks.length > 0) {
       const currentSpek = speks[0];
       setLocalVals({ ...currentSpek.vals });
-
-      // Initialize aliases from template if not already present
+      setLocalKodes({ ...(currentSpek.kodes || {}) });
       const nextAliases = { ...(currentSpek.aliases || {}) };
       let changed = false;
       sections.forEach(sec => {
         sec.rows.forEach(row => {
           const key = sec.name + '||' + row.label;
-          if (row.alias && !nextAliases[key]) {
-            nextAliases[key] = row.alias;
-            changed = true;
-          }
+          if (row.alias && !nextAliases[key]) { nextAliases[key] = row.alias; changed = true; }
         });
       });
-
       if (changed) {
         const nextSpek = { ...currentSpek, aliases: nextAliases };
         setLocalInfo(nextSpek);
@@ -118,21 +299,118 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
     }
   }, [isProjectForm, speks.length, sections]);
 
-  const infoStyle = { width: '100%', padding: '5px 8px', borderRadius: 7, border: '0.5px solid #d5d5cd', background: '#fafaf7', fontFamily: 'inherit', fontSize: 13, color: '#111', outline: 'none' };
-  const secTitleStyle = { padding: '7px 16px', background: '#fafaf7', borderTop: '0.5px solid #d5d5cd', borderBottom: '0.5px solid #e0e0d8', fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.04em', fontStyle: 'italic', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' };
-  const rowStyle = { display: 'grid', gridTemplateColumns: '250px 1fr', borderBottom: '0.5px solid #eeeee8' };
-  const lblStyle = { padding: '7px 16px', color: '#666', fontSize: 13, borderRight: '0.5px solid #e0e0d8', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 };
-  const valStyle = { padding: '5px 10px', display: 'flex', alignItems: 'center' };
-  const fieldStyle = { width: '100%', padding: '4px 8px', borderRadius: 7, border: '0.5px solid #d5d5cd', background: '#fafaf7', fontFamily: 'inherit', fontSize: 13, color: '#111', outline: 'none' };
+  React.useEffect(() => {
+    if (activeIdx === null || !localInfo || !localInfo.aliases) return;
 
+    const standardSection = sections.find(s => s.name === 'Lapisan Standard');
+    if (!standardSection) return;
+
+    let changed = false;
+    const nextVals = { ...localVals };
+
+    standardSection.rows.forEach(row => {
+      const key = 'Lapisan Standard||' + row.label;
+      const currentKode = localKodes[key] !== undefined ? localKodes[key] : getStaticSpekCode(row.alias);
+      const targetVal = lookupCat(categories, 'tf', currentKode) || '';
+      if (localVals[key] !== targetVal) {
+        nextVals[key] = targetVal;
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setLocalVals(nextVals);
+      setSaved(false);
+
+      if (isProjectForm && speks.length > 0) {
+        const nextAliases = { ...(localInfo.aliases || {}) };
+        onChange([{ ...speks[0], ...localInfo, vals: nextVals, kodes: { ...localKodes }, aliases: nextAliases }]);
+      }
+    }
+  }, [localVals, localInfo, activeIdx, isProjectForm, speks, onChange, localKodes, categories, sections]);
+
+  // ─── Row & field styles ──────────────────────────────────────────────────
+  const tableRowStyle = {
+    display: 'grid',
+    gridTemplateColumns: '60px 240px 1fr 80px',
+    borderBottom: `1px solid ${COLOR.borderLight}`,
+    transition: 'background 0.1s',
+  };
+  const kodeStyle = {
+    padding: '4px 6px',
+    borderRight: `1px solid ${COLOR.borderLight}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+  };
+  const lblStyle = {
+    padding: '8px 16px',
+    color: COLOR.text,
+    fontSize: 13,
+    borderRight: `1px solid ${COLOR.borderLight}`,
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  };
+  const valStyle = {
+    padding: '4px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    borderRight: `1px solid ${COLOR.borderLight}`,
+  };
+  const fieldStyle = {
+    width: '100%',
+    padding: '5px 2px',
+    border: 'none',
+    background: 'transparent',
+    fontFamily: 'inherit',
+    fontSize: 13,
+    color: COLOR.text,
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  // ─── Table column header ─────────────────────────────────────────────────
+  const tableColHeader = (
+    <div style={{ display: 'grid', gridTemplateColumns: '60px 240px 1fr 80px', background: '#f9f9f6', borderBottom: `1px solid ${COLOR.border}` }}>
+      <div style={{ padding: '5px 8px', fontSize: 10, color: COLOR.textFaint, textAlign: 'center', borderRight: `1px solid ${COLOR.borderLight}`, fontWeight: 600, letterSpacing: '0.05em' }}>KODE</div>
+      <div style={{ padding: '5px 16px', fontSize: 10, color: COLOR.textFaint, borderRight: `1px solid ${COLOR.borderLight}`, fontWeight: 600, letterSpacing: '0.05em' }}>LABEL</div>
+      <div style={{ padding: '5px 12px', fontSize: 10, color: COLOR.textFaint, borderRight: `1px solid ${COLOR.borderLight}`, fontWeight: 600, letterSpacing: '0.05em' }}>NILAI</div>
+      <div style={{ padding: '5px 8px', fontSize: 10, color: COLOR.textFaint, textAlign: 'center', fontWeight: 600, letterSpacing: '0.05em' }}>TEBAL</div>
+    </div>
+  );
+
+  // ─── Info fields ─────────────────────────────────────────────────────────
+  const infoFields = [
+    ['tanggal', 'Tanggal', 'date'],
+    ['norekap', 'No Rekap', 'text'],
+    ['estimator', 'Estimator', 'text'],
+    ['koord', 'Koordinator Rekap', 'text'],
+    ['kontrak', 'No Kontrak', 'text'],
+    ['nip', 'NIP', 'text'],
+    ['produk', 'Nama Produk', 'text'],
+    ['proyek', 'Nama Proyek', 'text'],
+  ];
+
+  const statusItems = [
+    ['statusPend', 'Ada Pendingan'],
+    ['statusTidakPend', 'Tidak Ada Pendingan'],
+    ['statusAntiRayap', 'Ada Anti Rayap'],
+    ['statusTidakAntiRayap', 'Tidak Anti Rayap'],
+  ];
+
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div style={isProjectForm ? {} : s.page}>
+      {/* ── Top bar ──────────────────────────────────────────────────────── */}
       {!isProjectForm && (
         <div style={s.pageHeader}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={s.pageTitle}>Spek Proyek</span>
             <button style={s.btnSm} onClick={() => setShowTpl(true)}>⚙ Konfigurasi Template</button>
-            <button style={{ ...s.btnSm, background: '#eff6ff', color: '#2563eb', borderColor: '#dbeafe' }} onClick={() => setShowModulRef(true)}>📁 Referensi Modul</button>
+            <button style={{ ...s.btnSm, background: COLOR.blueBg, color: COLOR.blue, borderColor: COLOR.blueBorder }} onClick={() => setShowModulRef(true)}>📁 Referensi Modul</button>
           </div>
           <button style={s.btnPrimary} onClick={openNew}>+ Buat Spek</button>
         </div>
@@ -141,23 +419,24 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
       {isProjectForm && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14, gap: 8 }}>
           <button style={s.btnSm} onClick={() => setShowTpl(true)}>⚙ Konfigurasi Template</button>
-          <button style={{ ...s.btnSm, background: '#eff6ff', color: '#2563eb', borderColor: '#dbeafe' }} onClick={() => setShowModulRef(true)}>📁 Referensi Modul</button>
+          <button style={{ ...s.btnSm, background: COLOR.blueBg, color: COLOR.blue, borderColor: COLOR.blueBorder }} onClick={() => setShowModulRef(true)}>📁 Referensi Modul</button>
         </div>
       )}
 
-      <div style={{ display: isProjectForm ? 'block' : 'grid', gridTemplateColumns: '200px 1fr', gap: 14, alignItems: 'start' }}>
-        {/* sidebar */}
+      <div style={{ display: isProjectForm ? 'block' : 'grid', gridTemplateColumns: '200px 1fr', gap: 16, alignItems: 'start' }}>
+        {/* ── Sidebar ────────────────────────────────────────────────────── */}
         {!isProjectForm && (
-          <div style={{ border: '0.5px solid #e0e0d8', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
-            <div style={{ padding: '8px 12px', background: '#fafaf7', borderBottom: '0.5px solid #e0e0d8', fontSize: 11, fontWeight: 500, color: '#888' }}>Daftar Spek</div>
+          <div style={{ ...cardStyle, marginBottom: 0 }}>
+            <div style={{ padding: '10px 14px', background: COLOR.sectionHeader, borderBottom: `1px solid ${COLOR.border}`, fontSize: 10, fontWeight: 700, color: COLOR.textMuted, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Daftar Spek</div>
             {speks.length === 0 ? (
-              <div style={{ padding: '10px 12px', fontSize: 12, color: '#aaa' }}>Belum ada spek</div>
+              <div style={{ padding: '14px', fontSize: 12, color: COLOR.textFaint, textAlign: 'center' }}>Belum ada spek</div>
             ) : speks.map((sp, i) => (
-              <div key={i} style={{ padding: '7px 12px', borderBottom: '0.5px solid #eeeee8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: activeIdx === i ? '#f0f0ec' : 'transparent' }}
+              <div key={i}
+                style={{ padding: '9px 14px', borderBottom: `1px solid ${COLOR.borderLight}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: activeIdx === i ? '#f0f0ec' : 'transparent' }}
                 onClick={() => selectSpek(i)}>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontSize: 13, fontWeight: activeIdx === i ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.norekap || 'Tanpa No'}</div>
-                  <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.produk || sp.proyek}</div>
+                  <div style={{ fontSize: 13, fontWeight: activeIdx === i ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: COLOR.text }}>{sp.norekap || 'Tanpa No'}</div>
+                  <div style={{ fontSize: 11, color: COLOR.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.produk || sp.proyek}</div>
                 </div>
                 <button style={{ ...s.iconBtn, color: '#b91c1c', fontSize: 11, flexShrink: 0 }} onClick={e => { e.stopPropagation(); deleteSpek(i); }}>✕</button>
               </div>
@@ -165,134 +444,266 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
           </div>
         )}
 
-        {/* main */}
+        {/* ── Main content ───────────────────────────────────────────────── */}
         {activeIdx === null || !speks[activeIdx] ? (
-          <div style={{ ...s.empty, border: '0.5px solid #e0e0d8', borderRadius: 10, background: '#fff' }}>Pilih spek dari kiri atau buat spek baru</div>
+          <div style={{ ...s.empty, border: `1px solid ${COLOR.border}`, borderRadius: 12, background: COLOR.surface }}>Pilih spek dari kiri atau buat spek baru</div>
         ) : (
-          <div style={{ border: '0.5px solid #e0e0d8', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Spek header bar (non-project form) */}
             {!isProjectForm && (
-              <div style={{ padding: '10px 16px', background: '#fafaf7', borderBottom: '0.5px solid #e0e0d8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{localInfo.norekap || 'Tanpa No Rekap'}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{localInfo.produk}{localInfo.produk && localInfo.proyek ? ' — ' : ''}{localInfo.proyek}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: COLOR.text }}>{localInfo.norekap || 'Tanpa No Rekap'}</div>
+                  <div style={{ fontSize: 12, color: COLOR.textMuted, marginTop: 2 }}>{localInfo.produk}{localInfo.produk && localInfo.proyek ? ' — ' : ''}{localInfo.proyek}</div>
                 </div>
-                <button style={{ ...s.btnPrimary, background: saved ? '#166534' : '#111', borderColor: saved ? '#166534' : '#111' }} onClick={saveValues}>
+                <button style={{ ...s.btnPrimary, background: saved ? COLOR.green : COLOR.accent, borderColor: saved ? COLOR.green : COLOR.accent }} onClick={saveValues}>
                   {saved ? '✓ Tersimpan' : 'Simpan'}
                 </button>
               </div>
             )}
 
-            {/* info proyek */}
-            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #d5d5cd' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[['tanggal', 'Tanggal', 'date'], ['norekap', 'No Rekap', 'text'], ['estimator', 'Estimator', 'text'], ['koord', 'Koordinator Rekap', 'text'], ['kontrak', 'No Kontrak', 'text'], ['nip', 'NIP', 'text'], ['produk', 'Nama Produk', 'text'], ['proyek', 'Nama Proyek', 'text']].map(([k, lbl, type]) => (
+            {/* ── Card: Info Proyek ───────────────────────────────────────── */}
+            <div style={cardStyle}>
+              <div style={sectionHeaderStyle}>
+                <span style={sectionTitleStyle}>Info Proyek</span>
+              </div>
+              <div style={{ padding: '18px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px' }}>
+                {infoFields.map(([k, lbl, type]) => (
                   <div key={k}>
-                    <div style={{ fontSize: 11, color: '#888', marginBottom: 3 }}>{lbl}</div>
-                    <input type={type} style={infoStyle} value={localInfo[k] || ''} onChange={setInfo(k)} />
+                    <div style={{ fontSize: 11, fontWeight: 600, color: COLOR.textMuted, marginBottom: 5, letterSpacing: '0.02em' }}>{lbl}</div>
+                    <input
+                      type={type}
+                      style={baseInputStyle}
+                      value={localInfo[k] || ''}
+                      onChange={setInfo(k)}
+                      onFocus={e => (e.target.style.borderColor = COLOR.blue)}
+                      onBlur={e => (e.target.style.borderColor = COLOR.border)}
+                    />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* status proyek */}
-            <div style={secTitleStyle}>Status Proyek</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-              {[['statusPend', 'Ada Pendingan'], ['statusTidakPend', 'Tidak Ada Pendingan'], ['statusAntiRayap', 'Ada Anti Rayap'], ['statusTidakAntiRayap', 'Tidak Anti Rayap']].map(([k, lbl]) => (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderBottom: '0.5px solid #eeeee8', fontSize: 13 }}>
-                  <input type="checkbox" id={'cb-' + k} checked={!!localInfo[k]} onChange={setInfo(k)} style={{ width: 14, height: 14, cursor: 'pointer' }} />
-                  <label htmlFor={'cb-' + k} style={{ cursor: 'pointer' }}>{lbl}</label>
-                </div>
-              ))}
+            {/* ── Card: Status Proyek ─────────────────────────────────────── */}
+            <div style={cardStyle}>
+              <div style={sectionHeaderStyle}>
+                <span style={sectionTitleStyle}>Status Proyek</span>
+              </div>
+              <div style={{ padding: '14px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px' }}>
+                {statusItems.map(([k, lbl]) => (
+                  <label key={k} htmlFor={'cb-' + k}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, border: `1px solid ${localInfo[k] ? COLOR.blue : COLOR.borderLight}`, background: localInfo[k] ? COLOR.blueBg : '#fafaf8', cursor: 'pointer', fontSize: 13, color: localInfo[k] ? COLOR.blue : COLOR.text, transition: 'all 0.15s', userSelect: 'none' }}>
+                    <input type="checkbox" id={'cb-' + k} checked={!!localInfo[k]} onChange={setInfo(k)}
+                      style={{ width: 15, height: 15, accentColor: COLOR.blue, cursor: 'pointer', flexShrink: 0 }} />
+                    <span style={{ fontWeight: localInfo[k] ? 600 : 400 }}>{lbl}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            {/* dynamic sections dari template */}
+            {/* ── Dynamic sections ────────────────────────────────────────── */}
             {sections.length === 0 ? (
-              <div style={{ padding: '16px', fontSize: 14, color: '#888' }}>
+              <div style={{ ...cardStyle, padding: 20, fontSize: 14, color: COLOR.textMuted, textAlign: 'center' }}>
                 Belum ada template. Klik <strong>⚙ Konfigurasi Template</strong> di atas untuk membuat template.
               </div>
             ) : sections.map((sec, si) => (
-              <div key={si}>
-                <div style={secTitleStyle} onClick={() => toggleSection(sec.name)}>
-                  <span>{sec.name}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6 }}>{collapsedSections[sec.name] ? '▼ BUKA' : '▲ TUTUP'}</span>
+              <div key={si} style={cardStyle}>
+                {/* Section header */}
+                <div style={sectionHeaderStyle} onClick={() => toggleSection(sec.name)}>
+                  <span style={sectionTitleStyle}>{sec.name}</span>
+                  <span style={{ fontSize: 10, color: COLOR.textFaint, fontWeight: 500 }}>
+                    {collapsedSections[sec.name] ? '▼ BUKA' : '▲ TUTUP'}
+                  </span>
                 </div>
+
                 {!collapsedSections[sec.name] && (
-                  <div>
+                  <>
                     {sec.rows.length === 0 ? (
-                      <div style={{ padding: '8px 16px', fontSize: 12, color: '#aaa' }}>Belum ada baris di section ini</div>
-                    ) : sec.rows.map((row, ri) => {
-                      const key = sec.name + '||' + row.label;
-                      const curVal = localVals[key] !== undefined ? localVals[key] : '';
-                      const cat = getCat(row.source);
-                      // Force free text for Spesifikasi Produk, Spesifikasi tebal bahan, and Referensi jarak/ukuran
-                      const useFreeText = sec.name === 'Spesifikasi Produk' || sec.name === 'Spesifikasi tebal bahan' || sec.name === 'Referensi jarak/ukuran';
-                      const hideCatBadge = useFreeText;
-                      let field;
-                      if (useFreeText) {
-                        field = <input type="text" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} placeholder="isi manual" />;
-                      } else if (cat && cat.fieldtype === 'select') {
-                        field = (
-                          <select style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)}>
-                            <option value="">-- pilih --</option>
-                            {cat.items.map(item => <option key={item} value={item}>{item}</option>)}
-                          </select>
-                        );
-                      } else if (cat && cat.fieldtype === 'number') {
-                        field = <input type="number" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} />;
-                      } else if (cat && cat.fieldtype === 'checkbox') {
-                        field = <input type="checkbox" checked={!!curVal} onChange={e => setVal(key, e.target.checked)} style={{ width: 15, height: 15 }} />;
-                      } else {
-                        field = <input type="text" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} placeholder={cat ? cat.name : 'isi manual'} />;
-                      }
-                      return (
-                        <div key={ri} style={rowStyle}>
-                          <div style={lblStyle}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                              <div
-                                style={{ cursor: 'pointer', color: aliasKey === key ? '#2563eb' : '#cbd5e1', fontSize: 14, userSelect: 'none' }}
-                                onClick={(e) => { e.stopPropagation(); setAliasKey(aliasKey === key ? null : key); }}
-                                title="Tentukan nama variabel untuk rumus"
-                              >
-                                ⋮⋮
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <span style={{ fontWeight: 500 }}>{row.label}</span>
-                                {((localInfo.aliases && localInfo.aliases[key]) || aliasKey === key) && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    {aliasKey === key ? (
+                      <div style={{ padding: '14px 20px', fontSize: 12, color: COLOR.textFaint, fontStyle: 'italic' }}>Belum ada baris di section ini</div>
+                    ) : (
+                      <>
+                        {tableColHeader}
+                        {sec.rows.map((row, ri) => {
+                          const key = sec.name + '||' + row.label;
+                          const isCustom = localKodes[key] !== undefined && localKodes[key] !== '';
+                          const isComputedStandard = !isCustom && ['lap_blk_pintu', 'lap_inv_kab', 'lap_pintu_mlp'].includes(row.alias);
+                          let curVal = localVals[key] !== undefined ? localVals[key] : '';
+                          if (isComputedStandard) {
+                            if (row.alias === 'lap_blk_pintu') {
+                              const kab1Key = Object.keys(localInfo.aliases || {}).find(k => localInfo.aliases[k] === 'kabinet1');
+                              curVal = kab1Key ? (localVals[kab1Key] || 'Polos') : 'Polos';
+                            } else {
+                              curVal = 'Polos';
+                            }
+                          }
+                          const cat = getCat(row.source);
+                          const useFreeText = sec.name === 'Spesifikasi Produk' || sec.name === 'Spesifikasi tebal bahan' || sec.name === 'Referensi jarak/ukuran';
+                          const hideCatBadge = useFreeText;
+                          let field;
+                          if (isComputedStandard) {
+                            field = <span style={{ fontSize: 13, color: COLOR.text, fontStyle: 'italic', fontWeight: 500 }}>{curVal}</span>;
+                          } else if (useFreeText) {
+                            field = <input type="text" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} placeholder="isi manual" />;
+                          } else if (cat && cat.fieldtype === 'select') {
+                            field = (
+                              <select style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)}>
+                                <option value="">-- pilih --</option>
+                                {cat.items.map((item, index) => {
+                                  const normalizedItem = typeof item === 'string'
+                                    ? { code: '', val: index + 1, name: item }
+                                    : item;
+                                  const itemValue = normalizedItem.name || '';
+                                  const itemLabel = normalizedItem.code !== '' && normalizedItem.code !== undefined
+                                    ? `${normalizedItem.name} (${normalizedItem.code})`
+                                    : normalizedItem.name;
+                                  return (
+                                    <option key={index} value={itemValue}>{itemLabel}</option>
+                                  );
+                                })}
+                              </select>
+                            );
+                          } else if (cat && cat.fieldtype === 'number') {
+                            field = <input type="number" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} />;
+                          } else if (cat && cat.fieldtype === 'checkbox') {
+                            field = <input type="checkbox" checked={!!curVal} onChange={e => setVal(key, e.target.checked)} style={{ width: 15, height: 15, accentColor: COLOR.blue }} />;
+                          } else {
+                            field = <input type="text" style={fieldStyle} value={curVal} onChange={e => setVal(key, e.target.value)} placeholder={cat ? cat.name : 'isi manual'} />;
+                          }
+                          const isHighlighted = tempHighlight === key;
+                          return (
+                            <div 
+                              key={ri} 
+                              id={key}
+                              style={{ 
+                                display: 'grid',
+                                gridTemplateColumns: '60px 240px 1fr 80px',
+                                background: isHighlighted 
+                                  ? '#eff6ff' 
+                                  : (ri % 2 === 0 ? COLOR.surface : '#fafaf8'),
+                                border: isHighlighted 
+                                  ? '2px solid #2563eb' 
+                                  : 'none',
+                                boxSizing: 'border-box',
+                                transition: 'background-color 0.3s, border 0.3s'
+                              }}
+                            >
+                              {(() => {
+                                const isStandardSection = sec.name === 'Lapisan Standard';
+                                const staticCode = getStaticSpekCode(row.alias);
+                                if (isStandardSection) {
+                                  return (
+                                    <div style={kodeStyle}>
                                       <input
-                                        autoFocus
-                                        style={{ border: '1px solid #2563eb', background: '#fff', fontSize: 10, color: '#2563eb', padding: '1px 4px', borderRadius: 4, outline: 'none', width: 100 }}
-                                        placeholder="VAR_NAME"
-                                        value={(localInfo.aliases && localInfo.aliases[key]) || ''}
-                                        onChange={e => setAlias(key, e.target.value)}
-                                        onBlur={() => setAliasKey(null)}
-                                        onKeyDown={e => e.key === 'Enter' && setAliasKey(null)}
+                                        type="text"
+                                        style={{
+                                          width: '45px',
+                                          textAlign: 'center',
+                                          padding: '3px 0',
+                                          border: `1.5px solid ${COLOR.border}`,
+                                          borderRadius: '4px',
+                                          background: '#ffffff',
+                                          fontFamily: 'inherit',
+                                          fontSize: 13,
+                                          fontWeight: '700',
+                                          color: COLOR.text,
+                                          outline: 'none',
+                                          transition: 'border-color 0.15s, box-shadow 0.15s',
+                                        }}
+                                        value={localKodes[key] || ''}
+                                        placeholder={staticCode || ''}
+                                        onChange={e => handleStandardKodeChange(key, e.target.value)}
+                                        onFocus={e => {
+                                          e.target.style.borderColor = COLOR.blue;
+                                          e.target.style.boxShadow = `0 0 0 2px ${COLOR.blueBg}`;
+                                        }}
+                                        onBlur={e => {
+                                          e.target.style.borderColor = COLOR.border;
+                                          e.target.style.boxShadow = 'none';
+                                        }}
                                       />
-                                    ) : (
-                                      <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 700, background: '#eff6ff', padding: '0 4px', borderRadius: 4 }}>
-                                        {(localInfo.aliases && localInfo.aliases[key])}
-                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div style={kodeStyle}>
+                                    {staticCode && (
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: COLOR.text }}>{staticCode}</span>
                                     )}
-                                    {row.note && !aliasKey && <span style={{ fontSize: 10, color: '#aaa', fontStyle: 'italic' }}>({row.note})</span>}
                                   </div>
-                                )}
+                                );
+                              })()}
+                              <div style={lblStyle}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                                  <div
+                                    style={{ cursor: 'pointer', color: aliasKey === key ? COLOR.blue : '#d1d5db', fontSize: 14, userSelect: 'none', lineHeight: 1 }}
+                                    onClick={(e) => { e.stopPropagation(); setAliasKey(aliasKey === key ? null : key); }}
+                                    title="Tentukan nama variabel untuk rumus"
+                                  >⋮⋮</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <span style={{ fontWeight: 500, color: COLOR.text }}>{row.label}</span>
+                                    {((localInfo.aliases && localInfo.aliases[key]) || aliasKey === key) && (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {aliasKey === key ? (
+                                          <input
+                                            autoFocus
+                                            style={{ border: `1px solid ${COLOR.blue}`, background: '#fff', fontSize: 10, color: COLOR.blue, padding: '1px 4px', borderRadius: 4, outline: 'none', width: 100 }}
+                                            placeholder="VAR_NAME"
+                                            value={(localInfo.aliases && localInfo.aliases[key]) || ''}
+                                            onChange={e => setAlias(key, e.target.value)}
+                                            onBlur={() => setAliasKey(null)}
+                                            onKeyDown={e => e.key === 'Enter' && setAliasKey(null)}
+                                          />
+                                        ) : (
+                                          <span style={{ fontSize: 10, color: COLOR.blue, fontWeight: 700, background: COLOR.blueBg, padding: '1px 5px', borderRadius: 4 }}>
+                                            {(localInfo.aliases && localInfo.aliases[key])}
+                                          </span>
+                                        )}
+                                        {row.note && !aliasKey && <span style={{ fontSize: 10, color: COLOR.textFaint, fontStyle: 'italic' }}>({row.note})</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {!hideCatBadge && cat && <Badge color="amber">{cat.code}</Badge>}
                               </div>
+                              <div style={valStyle}>{field}</div>
+                              {(() => {
+                                const isHpl = row.source === 'hpl';
+                                let thicknessText = '';
+                                let isNa = false;
+                                if (isHpl) {
+                                  thicknessText = getHplThicknessText(curVal, categories);
+                                  isNa = thicknessText === '#N/A';
+                                }
+                                return (
+                                  <div style={{
+                                    padding: '4px 8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    background: isHpl ? (isNa ? '#fee2e2' : '#f0fdf4') : 'transparent',
+                                    color: isHpl ? (isNa ? '#ef4444' : '#166534') : COLOR.text
+                                  }}>
+                                    {thicknessText}
+                                  </div>
+                                );
+                              })()}
                             </div>
-                            {!hideCatBadge && cat && <Badge color="amber">{cat.code}</Badge>}
-                          </div>
-                          <div style={valStyle}>{field}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             ))}
 
+            {/* Bottom save bar */}
             {!isProjectForm && (
-              <div style={{ padding: '10px 16px', borderTop: '0.5px solid #e0e0d8', display: 'flex', gap: 8 }}>
-                <button style={{ ...s.btnPrimary, background: saved ? '#166534' : '#111', borderColor: saved ? '#166534' : '#111' }} onClick={saveValues}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: 8 }}>
+                <button style={{ ...s.btnPrimary, background: saved ? COLOR.green : COLOR.accent, borderColor: saved ? COLOR.green : COLOR.accent }} onClick={saveValues}>
                   {saved ? '✓ Tersimpan' : 'Simpan Spek'}
                 </button>
               </div>
@@ -301,6 +712,7 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
         )}
       </div>
 
+      {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <Modal open={showTpl} onClose={() => setShowTpl(false)} title="Konfigurasi Template Spek" size="large">
         <div style={{ margin: '-20px' }}>
           <TemplatePage sections={sections} categories={categories} onChange={onTplChange} />
@@ -329,81 +741,116 @@ export default function SpekPage({ speks, sections, categories, moduls = [], onC
           <button style={s.btnPrimary} onClick={saveNew}>Buat</button>
         </div>
       </Modal>
-      
+
       {/* REFERENSI MODUL MODAL */}
       <Modal open={showModulRef} onClose={() => setShowModulRef(false)} title="Referensi Modul Proyek" size="medium">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ padding: '12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#475569' }}>Auto-Generate</div>
-            <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Ambil semua modul yang memiliki NIP sama dengan spek saat ini (<strong>{localInfo.nip || '-'}</strong>).</p>
-            <button 
+          <div style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 10, border: `1px solid ${COLOR.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: COLOR.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Auto-Generate</div>
+            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12, lineHeight: 1.5 }}>Ambil semua modul yang memiliki NIP sama dengan spek saat ini (<strong>{localInfo.nip || '-'}</strong>).</p>
+            <button
               disabled={!localInfo.nip}
-              style={{ ...s.btnSm, background: '#2563eb', color: '#fff', width: '100%', opacity: !localInfo.nip ? 0.5 : 1 }}
+              style={{ ...s.btnSm, background: COLOR.blue, color: '#fff', width: '100%', justifyContent: 'center', opacity: !localInfo.nip ? 0.4 : 1 }}
               onClick={() => {
                 const matched = moduls.filter(m => m.nip === localInfo.nip).map(m => m.kabinet);
                 const currentRefs = localInfo.modulRefs || [];
-                const combined = Array.from(new Set([...currentRefs, ...matched]));
-                
-                setLocalInfo(p => ({ ...p, modulRefs: combined }));
-                if (isProjectForm) {
-                  onChange([{ ...speks[0], ...localInfo, modulRefs: combined }]);
-                }
+                const nextRefs = [...currentRefs];
+                matched.forEach(name => {
+                  const exists = nextRefs.some(rn => (typeof rn === 'string' ? rn : rn.name) === name);
+                  if (!exists) {
+                    nextRefs.push({ name, qty: 1 });
+                  }
+                });
+                setLocalInfo(p => ({ ...p, modulRefs: nextRefs }));
+                if (isProjectForm) onChange([{ ...speks[0], ...localInfo, modulRefs: nextRefs }]);
               }}
             >
-              Cari & Tambahkan Otomatis
+              Cari &amp; Tambahkan Otomatis
             </button>
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: '#475569' }}>Daftar Modul Terpilih</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 40, padding: 8, border: '1px dashed #cbd5e1', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: COLOR.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Modul Terpilih</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 40, padding: 10, border: `1px dashed #cbd5e1`, borderRadius: 8, background: '#fafafe' }}>
               {(!localInfo.modulRefs || localInfo.modulRefs.length === 0) ? (
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>Belum ada modul yang dipilih</span>
-              ) : localInfo.modulRefs.map((m, i) => (
-                <Badge key={i} color="blue" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {m}
-                  <span 
-                    style={{ cursor: 'pointer', fontWeight: 800 }} 
-                    onClick={() => {
-                      const next = localInfo.modulRefs.filter(rn => rn !== m);
-                      setLocalInfo(p => ({ ...p, modulRefs: next }));
-                      if (isProjectForm) onChange([{ ...speks[0], ...localInfo, modulRefs: next }]);
-                    }}
-                  >✕</span>
-                </Badge>
-              ))}
+              ) : localInfo.modulRefs.map((m, i) => {
+                const item = typeof m === 'string' ? { name: m, qty: 1 } : m;
+                return (
+                  <Badge key={i} color="blue" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px' }}>
+                    <span style={{ fontWeight: 500 }}>{item.name}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.qty || 1}
+                      onChange={e => {
+                        const newQty = parseInt(e.target.value) || 1;
+                        const next = (localInfo.modulRefs || []).map((rn, idx) => {
+                          if (idx === i) {
+                            return { name: item.name, qty: newQty };
+                          }
+                          return typeof rn === 'string' ? { name: rn, qty: 1 } : rn;
+                        });
+                        setLocalInfo(p => ({ ...p, modulRefs: next }));
+                        if (isProjectForm) onChange([{ ...speks[0], ...localInfo, modulRefs: next }]);
+                      }}
+                      onClick={e => e.stopPropagation()}
+                      style={{
+                        width: 45,
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 4,
+                        padding: '1px 4px',
+                        fontSize: 11,
+                        textAlign: 'center',
+                        background: '#fff',
+                        color: '#334155',
+                        fontWeight: 600,
+                        outline: 'none'
+                      }}
+                    />
+                    <span style={{ cursor: 'pointer', fontWeight: 800, color: '#ef4444', marginLeft: 4 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const next = localInfo.modulRefs.filter((_, idx) => idx !== i);
+                        setLocalInfo(p => ({ ...p, modulRefs: next }));
+                        if (isProjectForm) onChange([{ ...speks[0], ...localInfo, modulRefs: next }]);
+                      }}>✕</span>
+                  </Badge>
+                );
+              })}
             </div>
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#475569' }}>Cari Modul Lainnya</div>
-            <input 
-              style={{ ...s.input, marginBottom: 8 }} 
-              placeholder="Ketik nama modul..." 
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: COLOR.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cari Modul Lainnya</div>
+            <input
+              style={{ ...s.input, marginBottom: 8 }}
+              placeholder="Ketik nama modul..."
               value={refSearch}
               onChange={e => setRefSearch(e.target.value)}
             />
-            <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid ${COLOR.border}`, borderRadius: 8 }}>
               {moduls
                 .filter(m => {
                   const name = m.kabinet || '';
-                  return name.toLowerCase().includes(refSearch.toLowerCase()) && !(localInfo.modulRefs || []).includes(name);
+                  return name.toLowerCase().includes(refSearch.toLowerCase()) && 
+                    !(localInfo.modulRefs || []).some(rn => (typeof rn === 'string' ? rn : rn.name) === name);
                 })
                 .map((m, i) => (
-                  <div 
-                    key={i} 
-                    style={{ padding: '8px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
+                  <div
+                    key={i}
+                    style={{ padding: '9px 12px', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${COLOR.borderLight}`, cursor: 'pointer' }}
                     onClick={() => {
                       const name = m.kabinet;
-                      const next = Array.from(new Set([...(localInfo.modulRefs || []), name]));
+                      const next = [...(localInfo.modulRefs || []), { name, qty: 1 }];
                       setLocalInfo(p => ({ ...p, modulRefs: next }));
                       if (isProjectForm) onChange([{ ...speks[0], ...localInfo, modulRefs: next }]);
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <span>{m.kabinet}</span>
-                    <span style={{ color: '#2563eb', fontSize: 11, fontWeight: 600 }}>+ Tambah</span>
+                    <span style={{ color: COLOR.text }}>{m.kabinet}</span>
+                    <span style={{ color: COLOR.blue, fontSize: 11, fontWeight: 600 }}>+ Tambah</span>
                   </div>
                 ))}
             </div>

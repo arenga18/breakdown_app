@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Modal } from './UI';
 import SharedModuleTable, { SearchableCell } from './SharedModuleTable';
 import { shiftTemplateFormulas } from '../utils/calc';
+import { getEdgingNameFromCode, resolveEdgingFromCode, getHplNameFromCode } from '../utils/breakdownCalc';
+
 
 const emptyRow = {
   cat: '', type: '', kode: 'KS', no: '', komp: '',
@@ -15,11 +17,41 @@ const emptyRow = {
   isParent: false
 };
 
-export default function ModuleEditor({
+/**
+ * Build default formula row for a new manual breakdown row.
+ * P/L/T/Jml reference parent row; string fields use =alias syntax resolved against spec.
+ */
+function buildDefaultRow(parentRowNum) {
+  return {
+    type: 'prt',
+    kode: 'KS',
+    // Inherit parent module dimensions via cell refs
+    p: `=I${parentRowNum}`,
+    l: `=J${parentRowNum}`,
+    t: `=TKAB`,
+    jml: `=M${parentRowNum}`,
+    // Material — resolves via specAliases (=alias)
+    bhn: '=BAHAN_KABINET_1',
+    t_bhn: '=TKAB',
+    // Surface finish — resolves via specAliases (=alias)
+    lap_luar: '=LAPISAN_TIDAK_TERLIHAT_U/_KAB.',
+    lap_dalam: '=TIPE_LAP._U/_SISI_TIDAK_TERLIHAT',
+    // Edging side flags (1 = active) and edging type
+    l_fin: '11',
+    d_fin: '11',
+    p1: '1',
+    p2: '1',
+    l1: '1',
+    l2: '1',
+  };
+}
+
+function ModuleEditor({
   header,
   items,
   parts = [],
   setupItems = [],
+  spec = {},
   moduls = [],
   subModuls = [],
   hplOptions = [],
@@ -35,18 +67,20 @@ export default function ModuleEditor({
   renderCustomCell = null,
   isRefMode = false,
   selectedCoord = null,
-  refCoords = [],
+  refCoordsStr = '',
   onDeleteModule
 }) {
   const [editingField, setEditingField] = useState(null); // { idx: null | 'parent' | index, key: '' }
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [showCNC, setShowCNC] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const renderHeaderCell = (key, val, colLetter, onUpd, extraStyle = {}, isParent = true, overrideRowNum = null) => {
     const rowNum = overrideRowNum || (header._idx !== undefined ? header._idx : 0) + 1;
     const coord = `${colLetter}${rowNum}`;
     const isSel = selectedCoord === coord;
-    const isRef = refCoords.includes(coord);
+    const refCoordsArr = refCoordsStr ? refCoordsStr.split(',') : [];
+    const isRef = refCoordsArr.includes(coord);
     const isEditing = editingField && editingField.key === key && (isParent ? editingField.isParent : editingField.subIdx === overrideRowNum);
 
     const cellStyle = {
@@ -111,14 +145,26 @@ export default function ModuleEditor({
 
   function handleUpdateParent(key, val) {
     if (key === 'modul') {
-      const template = moduls.find(m => m.kabinet.toLowerCase() === val.toLowerCase());
+      const template = moduls.find(m => m.kabinet && m.kabinet.toLowerCase() === val.toLowerCase());
       if (template) {
         const shiftAmount = header._idx !== undefined ? header._idx : 0;
+
+        // Lookup initial quantity from spec.modulRefs if configured
+        let initialJml = template.jml || 1;
+        if (spec && spec.modulRefs) {
+          const ref = spec.modulRefs.find(r => {
+            const rName = typeof r === 'string' ? r : r.name;
+            return rName && template.kabinet && rName.toLowerCase() === template.kabinet.toLowerCase();
+          });
+          if (ref) {
+            initialJml = typeof ref === 'string' ? 1 : (ref.qty || 1);
+          }
+        }
 
         // Prepare header data for shifting
         const headerCopy = {
           p: template.p, l: template.l, t: template.t, tpk: template.tpk || 'A',
-          jml: template.jml || 1, sub: template.sub || 1,
+          jml: initialJml, sub: template.sub || 1,
           p1: template.p1, p2: template.p2, l1: template.l1, l2: template.l2,
           l_fin: template.l_fin, d_fin: template.d_fin
         };
@@ -129,7 +175,8 @@ export default function ModuleEditor({
           modul: template.kabinet,
           komp: template.produk || template.dunit,
           tpk: template.tpk || 'A',
-          ...shiftedHeader
+          ...shiftedHeader,
+          jml: initialJml
         };
 
         // Shift formulas for components
@@ -151,46 +198,96 @@ export default function ModuleEditor({
     const next = [...items];
     if (!next[idx]) return;
 
+    // Helper to get all lookup updates for a component
+    const getPartLookupUpdates = (valKomp) => {
+      const updates = {};
+      if (!valKomp) return updates;
+      
+      const part = parts.find(p => p.name.toLowerCase() === valKomp.toLowerCase());
+      if (part) {
+        if (part.val) {
+          updates.bid = part.val;
+          updates.no = part.val;
+        }
+        if (part.code) updates.cat = part.code;
+        if (part.ks) updates.kode = part.ks;
+        if (part.opt !== undefined) updates.opt = part.opt;
+        if (part.bhn) updates.bhn = part.bhn;
+        if (part.t !== undefined) updates.t_bhn = part.t.toString(); // maps to Tebal Bahan column N!
+
+        // Lapisan & Edging IDs (Columns O-T in visual grid)
+        if (part.l !== undefined) updates.l_fin = part.l.toString();
+        if (part.d !== undefined) updates.d_fin = part.d.toString();
+        if (part.p1 !== undefined) updates.p1 = part.p1.toString();
+        if (part.p2 !== undefined) updates.p2 = part.p2.toString();
+        if (part.l1 !== undefined) updates.l1 = part.l1.toString();
+        if (part.l2 !== undefined) updates.l2 = part.l2.toString();
+
+        // Lapisan & Edging Names
+        if (part.lap_luar !== undefined) updates.lap_luar = part.lap_luar;
+        if (part.lap_dalam !== undefined) updates.lap_dalam = part.lap_dalam;
+        if (part.edg_p1 !== undefined) updates.edg_p1 = part.edg_p1;
+        if (part.edg_p2 !== undefined) updates.edg_p2 = part.edg_p2;
+        if (part.edg_l1 !== undefined) updates.edg_l1 = part.edg_l1;
+        if (part.edg_l2 !== undefined) updates.edg_l2 = part.edg_l2;
+
+        // Hardware Counts & Names
+        if (part.engsel !== undefined) updates.engsel = part.engsel;
+        if (part.rel !== undefined) updates.rel = part.rel;
+        if (part.q_dormec !== undefined) updates.dormec = part.q_dormec > 0 ? String(part.q_dormec) : '';
+        if (part.q_engsel !== undefined) updates.q_engsel = part.q_engsel;
+        if (part.q_rel !== undefined) updates.q_rel = part.q_rel;
+        if (part.q_dormec !== undefined) updates.q_dormec = part.q_dormec;
+        if (part.q_minifix !== undefined) updates.q_minifix = part.q_minifix;
+        if (part.q_dowel !== undefined) updates.q_dowel = part.q_dowel;
+      }
+      return { part, updates };
+    };
+
     if (typeof key === 'object' && key !== null) {
+      // First merge direct edits
       next[idx] = { ...next[idx], ...key };
+      
+      // If komp is modified, execute complete database lookup
       if (key.komp) {
         const valKomp = key.komp;
-        const part = parts.find(p => p.name.toLowerCase() === valKomp.toLowerCase());
-        if (part) {
-          next[idx].cat = part.code; next[idx].kode = part.ks; next[idx].bhn = part.bhn; next[idx].t = part.t;
-          if (part.l !== undefined) next[idx].l_fin = part.l.toString();
-          if (part.d !== undefined) next[idx].d_fin = part.d.toString();
-          if (part.p1 !== undefined) next[idx].p1 = part.p1.toString();
-          if (part.p2 !== undefined) next[idx].p2 = part.p2.toString();
-          if (part.l1 !== undefined) next[idx].l1 = part.l1.toString();
-          if (part.l2 !== undefined) next[idx].l2 = part.l2.toString();
-        }
+        const { part, updates } = getPartLookupUpdates(valKomp);
+        next[idx] = { ...next[idx], ...updates };
 
         const setup = setupItems.find(s => s.name.toLowerCase() === valKomp.toLowerCase());
-        next[idx].no = setup ? setup.no : '...';
-        if (setup && !part) {
-          next[idx].kode = setup.ks;
+        if (setup) {
+          next[idx].no = setup.no !== '•' && setup.no !== '-' ? setup.no : '...';
+          if (!part) {
+            next[idx].kode = setup.ks || '';
+          }
         }
       }
     } else {
       next[idx] = { ...next[idx], [key]: val };
       if (key === 'komp') {
-        const part = parts.find(p => p.name.toLowerCase() === val.toLowerCase());
-        if (part) {
-          next[idx].cat = part.code; next[idx].kode = part.ks; next[idx].bhn = part.bhn; next[idx].t = part.t;
-          if (part.l !== undefined) next[idx].l_fin = part.l.toString();
-          if (part.d !== undefined) next[idx].d_fin = part.d.toString();
-          if (part.p1 !== undefined) next[idx].p1 = part.p1.toString();
-          if (part.p2 !== undefined) next[idx].p2 = part.p2.toString();
-          if (part.l1 !== undefined) next[idx].l1 = part.l1.toString();
-          if (part.l2 !== undefined) next[idx].l2 = part.l2.toString();
-        }
+        const valKomp = val;
+        const { part, updates } = getPartLookupUpdates(valKomp);
+        next[idx] = { ...next[idx], ...updates };
 
-        const setup = setupItems.find(s => s.name.toLowerCase() === val.toLowerCase());
-        next[idx].no = setup ? setup.no : '...';
-        if (setup && !part) {
-          next[idx].kode = setup.ks;
+        const setup = setupItems.find(s => s.name.toLowerCase() === valKomp.toLowerCase());
+        if (setup) {
+          next[idx].no = setup.no !== '•' && setup.no !== '-' ? setup.no : '...';
+          if (!part) {
+            next[idx].kode = setup.ks || '';
+          }
         }
+      } else if (key === 'p1') {
+        next[idx].edg_p1 = resolveEdgingFromCode(val, next[idx].cat, spec?.categories || []);
+      } else if (key === 'p2') {
+        next[idx].edg_p2 = resolveEdgingFromCode(val, next[idx].cat, spec?.categories || []);
+      } else if (key === 'l1') {
+        next[idx].edg_l1 = resolveEdgingFromCode(val, next[idx].cat, spec?.categories || []);
+      } else if (key === 'l2') {
+        next[idx].edg_l2 = resolveEdgingFromCode(val, next[idx].cat, spec?.categories || []);
+      } else if (key === 'l_fin') {
+        next[idx].lap_luar = getHplNameFromCode(val);
+      } else if (key === 'd_fin') {
+        next[idx].lap_dalam = getHplNameFromCode(val);
       }
     }
     onChange(header, next);
@@ -215,7 +312,9 @@ export default function ModuleEditor({
 
   function handleAddRow(atIdx = -1) {
     const next = [...items];
-    const newRow = { ...emptyRow };
+    const parentRowNum = (header._idx !== undefined ? header._idx : 0) + 1;
+    const defaults = buildDefaultRow(parentRowNum);
+    const newRow = { ...emptyRow, ...defaults };
     if (atIdx === -1) next.push(newRow);
     else next.splice(atIdx + 1, 0, newRow);
     onChange(header, next);
@@ -282,11 +381,19 @@ export default function ModuleEditor({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            onClick={() => setShowCNC(!showCNC)}
-            style={{ background: showCNC ? '#e2e8f0' : '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={{ background: isCollapsed ? '#eff6ff' : '#f8fafc', color: isCollapsed ? '#2563eb' : '#475569', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
           >
-            {showCNC ? 'Hide CNC' : 'Show CNC'}
+            {isCollapsed ? '▼ Buka' : '▲ Tutup'}
           </button>
+          {!isCollapsed && (
+            <button
+              onClick={() => setShowCNC(!showCNC)}
+              style={{ background: showCNC ? '#e2e8f0' : '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {showCNC ? 'Hide Detail' : 'Show Detail'}
+            </button>
+          )}
           {onDeleteModule && (
             <button style={{ background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={onDeleteModule}>
               ✕ Hapus Modul
@@ -295,37 +402,42 @@ export default function ModuleEditor({
         </div>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <SharedModuleTable
-          rowOffset={sectionType === 'lepasan' ? 0 : (header._idx !== undefined ? 0 : 1)}
-          items={items}
-          parts={parts}
-          setupItems={setupItems}
-          hplOptions={hplOptions}
-          edgOptions={edgOptions}
-          bhnOptions={bhnOptions}
-          hideCardFrame
-          onUpdateRow={handleUpdateRow}
-          onDeleteRow={(idx) => { const next = [...items]; next.splice(idx, 1); onChange(header, next); }}
-          onReorder={handleReorder}
-          onCellClick={onCellClick}
-          isRefMode={isRefMode}
-          selectedCoord={selectedCoord}
-          refCoords={refCoords}
-          parent={header}
-          onUpdateParent={handleUpdateParent}
-          onDeleteModule={onDeleteModule}
-          moduls={moduls}
-          renderCustomCell={renderCustomCell}
-          showCNC={showCNC}
-          sectionType={sectionType}
-        />
-      </div>
+      {!isCollapsed && (
+        <>
+          <div className="table-scroll-container" style={{ overflowX: 'auto' }}>
+            <SharedModuleTable
+              rowOffset={sectionType === 'lepasan' ? 0 : (header._idx !== undefined ? 0 : 1)}
+              items={items}
+              parts={parts}
+              setupItems={setupItems}
+              spec={spec}
+              hplOptions={hplOptions}
+              edgOptions={edgOptions}
+              bhnOptions={bhnOptions}
+              hideCardFrame
+              onUpdateRow={handleUpdateRow}
+              onDeleteRow={(idx) => { const next = [...items]; next.splice(idx, 1); onChange(header, next); }}
+              onReorder={handleReorder}
+              onCellClick={onCellClick}
+              isRefMode={isRefMode}
+              selectedCoord={selectedCoord}
+              refCoordsStr={refCoordsStr}
+              parent={header}
+              onUpdateParent={handleUpdateParent}
+              onDeleteModule={onDeleteModule}
+              moduls={moduls}
+              renderCustomCell={renderCustomCell}
+              showCNC={showCNC}
+              sectionType={sectionType}
+            />
+          </div>
 
-      <div style={{ padding: '12px 20px', background: '#fcfcfd', borderTop: '1px solid #f3f4f6', display: 'flex', gap: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
-        <button style={{ background: 'transparent', border: 'none', color: '#2563eb', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => handleAddRow()}>+ Tambah Baris Manual</button>
-        {subModuls.length > 0 && <button style={{ background: 'transparent', border: 'none', color: '#059669', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => setIsSubModalOpen(true)}>+ Load Sub-Modul</button>}
-      </div>
+          <div style={{ padding: '12px 20px', background: '#fcfcfd', borderTop: '1px solid #f3f4f6', display: 'flex', gap: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
+            <button style={{ background: 'transparent', border: 'none', color: '#2563eb', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => handleAddRow()}>+ Tambah Baris Manual</button>
+            {subModuls.length > 0 && <button style={{ background: 'transparent', border: 'none', color: '#059669', fontSize: 12, fontWeight: 600, cursor: 'pointer' }} onClick={() => setIsSubModalOpen(true)}>+ Load Sub-Modul</button>}
+          </div>
+        </>
+      )}
 
       <Modal open={isSubModalOpen} onClose={() => setIsSubModalOpen(false)} title="Pilih Sub-Modul">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
@@ -340,3 +452,50 @@ export default function ModuleEditor({
     </div>
   );
 }
+
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function objectsEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const k of keysA) {
+    if (a[k] !== b[k]) return false;
+  }
+  return true;
+}
+
+const MemoizedModuleEditor = React.memo(ModuleEditor, (prevProps, nextProps) => {
+  return (
+    objectsEqual(prevProps.header, nextProps.header) &&
+    arraysEqual(prevProps.items, nextProps.items) &&
+    prevProps.selectedCoord === nextProps.selectedCoord &&
+    prevProps.refCoordsStr === nextProps.refCoordsStr &&
+    prevProps.isRefMode === nextProps.isRefMode &&
+    prevProps.sectionType === nextProps.sectionType &&
+    prevProps.spec === nextProps.spec &&
+    prevProps.parts === nextProps.parts &&
+    prevProps.setupItems === nextProps.setupItems &&
+    prevProps.moduls === nextProps.moduls &&
+    prevProps.subModuls === nextProps.subModuls &&
+    prevProps.hplOptions === nextProps.hplOptions &&
+    prevProps.edgOptions === nextProps.edgOptions &&
+    prevProps.bhnOptions === nextProps.bhnOptions &&
+    prevProps.badgeText === nextProps.badgeText &&
+    prevProps.badgeColor === nextProps.badgeColor &&
+    prevProps.badgeBg === nextProps.badgeBg &&
+    prevProps.mode === nextProps.mode
+  );
+});
+
+export default MemoizedModuleEditor;

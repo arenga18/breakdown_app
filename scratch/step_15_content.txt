@@ -1,0 +1,73 @@
+Created At: 2026-06-06T12:54:46Z
+Completed At: 2026-06-06T12:54:46Z
+File Path: `file:///Applications/Arenga/vscode/breakdown_app/src/App.js`
+Total Lines: 516
+Total Bytes: 24032
+Showing lines 1 to 516
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useState, useEffect } from 'react';
+2: import { migrateAllToBackend } from './api/migrate';
+3: import { initialState } from './initialState';
+4: import { api } from './api/client';
+5: import { syncStateWithDB } from './api/sync';
+6: import { s } from './components/UI';
+7: import StockPage from './components/StockPage';
+8: import PartPage from './components/PartPage';
+9: import CategoryPage from './components/CategoryPage';
+10: import ModulPage from './components/ModulPage';
+11: import ModulMasterPage from './components/ModulMasterPage';
+12: import ProjectPage from './components/ProjectPage';
+13: import SubModulPage from './components/SubModulPage';
+14: import SetupItemPage from './components/SetupItemPage';
+15: import DefinedNamesPage from './components/DefinedNamesPage';
+16: import { parseHashRoute, buildHashRoute } from './utils/routeParser';
+17: import { autoFillRowFromPart } from './utils/autoFill';
+18: 
+19: const PAGES = [
+20:   { key: 'modul', label: 'Modul' },
+21:   { key: 'project', label: 'Project' },
+22: ];
+23: 
+24: // Aliases that belong to "Lapisan Standard" section
+25: const LAPISAN_STANDARD_ALIASES = ['lap_blk_pintu', 'lap_inv_kab', 'lap_pintu_mlp', 'tip_lap_inv'];
+26: 
+27: export default function App() {
+28:   const [route, setRoute] = useState(() => parseHashRoute(window.location.hash));
+29:   const [state, setState] = useState(initialState);
+30:   const [loading, setLoading] = useState(true);
+31:   const [showModulMaster, setShowModulMaster] = useState(false);
+32:   const [showConfig, setShowConfig] = useState(false);
+33:   const [migrasi, setM
+<truncated 22933 bytes>
+           <div>- {(state.stock || []).length} stock records</div>
+487:                     <div>- {(state.projects || []).length} projects</div>
+488:                     <div>- {(state.moduls || []).length} Modul Kodifikasi templates</div>
+489:                   </div>
+490:                 </div>
+491:               )}
+492:               {migrasi.logs.map((l, i) => (
+493:                 <div key={i} style={{ color: l.includes('[x]') ? '#f87171' : l.includes('[ok]') ? '#34d399' : l.startsWith('  ->') ? '#93c5fd' : '#e2e8f0' }}>{l}</div>
+494:               ))}
+495:             </div>
+496:             <div style={{ padding: '12px 20px', borderTop: '0.5px solid #334155', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+497:               {!migrasi.running && !migrasi.done && (
+498:                 <>
+499:                   <button onClick={() => setMigrasi(m => ({ ...m, open: false }))} style={{ padding: '7px 16px', borderRadius: 6, border: '0.5px solid #475569', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 13 }}>Batal</button>
+500:                   <button onClick={runMigrasi} style={{ padding: '7px 20px', borderRadius: 6, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Mulai Migrasi</button>
+501:                 </>
+502:               )}
+503:               {migrasi.running && (
+504:                 <div style={{ color: '#93c5fd', fontSize: 13 }}>Sedang memproses...</div>
+505:               )}
+506:               {migrasi.done && (
+507:                 <button onClick={() => setMigrasi(m => ({ ...m, open: false, logs: [], done: false }))} style={{ padding: '7px 20px', borderRadius: 6, border: 'none', background: '#059669', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Tutup</button>
+508:               )}
+509:             </div>
+510:           </div>
+511:         </div>
+512:       )}
+513:     </div>
+514:   );
+515: }
+516: 
+The above content shows the entire, complete file contents of the requested file.

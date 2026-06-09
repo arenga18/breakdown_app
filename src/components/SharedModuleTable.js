@@ -1,16 +1,107 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { s, Badge } from './UI';
 import { evaluateFormula } from '../utils/calc';
-import { calcBreakdownItem } from '../utils/breakdownCalc';
+import { resolveAlias, buildAliasMap } from '../utils/resolveAlias';
+import { calcBreakdownItem, getEdgingNameFromCode, resolveEdgingFromCode, getFinishingThickness, resolveLapisanFromCode, getPartDefaultValue, isFinishingEmpty } from '../utils/breakdownCalc';
+import { getColLetter } from '../utils/colMap';
 
-export function SearchableCell({ value, resolvedValue, options, onSelect, fontWeight = 400, isRefMode = false }) {
+const EXTRA_COLUMNS = [
+  { key: 'profil3', label: 'Profil 3', width: 100, isCalc: false, bg: '#e2e8f0' },
+  { key: 'profil2', label: 'Profil 2', width: 100, isCalc: false, bg: '#e2e8f0' },
+  { key: 'profil', label: 'Profil', width: 100, isCalc: false, bg: '#e2e8f0' },
+  { key: 'siku_joint', label: 'Siku joint', width: 70, isCalc: false, bg: '#fee2e2' },
+  { key: 'screw_jf', label: 'Screw Jf', width: 70, isCalc: false, bg: '#fee2e2' },
+  { key: 'dormec', label: 'Dormec', width: 60, isCalc: false, bg: '#fee2e2' },
+  { key: 'rel', label: 'Rel', width: 80, isCalc: false, bg: '#fee2e2' },
+  { key: 'engsel', label: 'Engsel', width: 80, isCalc: false, bg: '#fee2e2' },
+  { key: 'v', label: 'V', width: 80, isCalc: false, bg: '#fef3c7' },
+  { key: 'v2', label: 'V2', width: 80, isCalc: false, bg: '#fef3c7' },
+  { key: 'h', label: 'H', width: 80, isCalc: false, bg: '#fef3c7' },
+  { key: 'anodize', label: 'Nama barang', width: 150, isCalc: false, bg: '#fef3c7' },
+  { key: 'p_val', label: 'Panjang', width: 70, isCalc: false, bg: '#fef3c7' },
+  { key: 'q_anodize', label: 'Jumlah', width: 70, isCalc: false, bg: '#fef3c7' },
+  { key: 'x_sep', label: 'x', width: 30, isCalc: true, bg: '#f8fafc' },
+  { key: 'v_lap', label: 'V lap', width: 50, isCalc: true, bg: '#f0fdf4' },
+  { key: 'v_edg', label: 'V edg', width: 60, isCalc: true, bg: '#f0fdf4' },
+  { key: 'desc_lap', label: 'Deskripsi lapisan', width: 160, isCalc: true, bg: '#f0fdf4' },
+  { key: 'desc_edg', label: 'Deskripsi edging', width: 160, isCalc: true, bg: '#f0fdf4' },
+  { key: 'desc_komp', label: 'Deskripsi Komponen', width: 200, isCalc: true, bg: '#ecfdf5' },
+  { key: 'nama_komp', label: 'Nama Komponen', width: 250, isCalc: true, bg: '#ecfdf5' },
+  { key: 'x_sep2', label: 'x', width: 30, isCalc: true, bg: '#f8fafc' },
+  { key: 'minifix', label: 'Minifix', width: 60, isCalc: false, bg: '#fdf2f8' },
+  { key: 'dowel', label: 'Dowel', width: 60, isCalc: false, bg: '#fdf2f8' },
+  { key: 'q_siku', label: '@siku', width: 60, isCalc: true, bg: '#fdf2f8' },
+  { key: 'q_screw', label: '@screw', width: 60, isCalc: true, bg: '#fdf2f8' },
+  { key: 'q_dormec_total', label: 'Dormec', width: 60, isCalc: true, bg: '#fdf2f8' },
+  { key: 'q_engsel_total', label: 'Engsel', width: 60, isCalc: true, bg: '#fdf2f8' },
+  { key: 'q_rel_total', label: 'Rel', width: 60, isCalc: true, bg: '#fdf2f8' },
+  { key: 'p_gross', label: 'P', width: 60, isCalc: true, bg: '#f0fdfa' },
+  { key: 'l_gross', label: 'L', width: 60, isCalc: true, bg: '#f0fdfa' },
+  { key: 'keliling', label: '2(P+L)', width: 70, isCalc: true, bg: '#f0fdfa' },
+  { key: 'luas_gross', label: '(PxL)', width: 70, isCalc: true, bg: '#f0fdfa' },
+  { key: 'bhn_dasar', label: 'Bahan Dasar', width: 100, isCalc: true, bg: '#e0f2fe' },
+  { key: 'bhn_desc', label: 'Deskr', width: 180, isCalc: true, bg: '#e0f2fe' },
+  { key: 'prop_harga', label: '/panel', width: 70, isCalc: true, bg: '#e0f2fe' },
+  { key: 'q_anodize_std', label: 'jumlah anodize @', width: 110, isCalc: true, bg: '#f8fafc' },
+  { key: 'q_minifix_total', label: 'minifix @', width: 70, isCalc: true, bg: '#f8fafc' },
+  { key: 'q_dowel_total', label: 'dowel @', width: 70, isCalc: true, bg: '#f8fafc' },
+  { key: 'q_siku_total', label: 'jml siku', width: 70, isCalc: true, bg: '#f8fafc' },
+  { key: 'q_screw_total', label: 'jml screw', width: 70, isCalc: true, bg: '#f8fafc' },
+  { key: 'area_m2', label: 'M²', width: 60, isCalc: true, bg: '#ecfdf5' },
+  { key: 'vol_m3', label: 'M³', width: 60, isCalc: true, bg: '#ecfdf5' },
+  { key: 't_p1', label: 'T_P1', width: 50, isCalc: true, bg: '#fffbeb' },
+  { key: 't_p2', label: 'T_P2', width: 50, isCalc: true, bg: '#fffbeb' },
+  { key: 't_l1', label: 'T_L1', width: 50, isCalc: true, bg: '#fffbeb' },
+  { key: 't_l2', label: 'T_L2', width: 50, isCalc: true, bg: '#fffbeb' },
+  { key: 'p_cnc', label: 'P_cnc', width: 60, isCalc: true, bg: '#f0fdf4' },
+  { key: 'l_cnc', label: 'L_cnc', width: 60, isCalc: true, bg: '#f0fdf4' },
+  { key: 'ukuran_cnc', label: 'ukuran CNC', width: 120, isCalc: true, bg: '#f0fdf4' },
+  { key: 'csv_format', label: 'CSV Format', width: 240, isCalc: true, bg: '#f8fafc' }
+];
+
+const LETTERS = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
+  'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ', 'BR', 'BS', 'BT', 'BU', 'BV', 'BW', 'BX',
+  'BY', 'BZ', 'CA', 'CB', 'CC', 'CD', 'CE', 'CF'
+];
+
+export function SearchableCell({ value, resolvedValue, options, onSelect, fontWeight = 400, isRefMode = false, isEmpty = false }) {
   const [show, setShow] = useState(false);
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
+  const inputRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 300 });
 
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
+
+  useEffect(() => {
+    if (!editing) return;
+
+    const update = () => {
+      if (inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setCoords({
+          top: rect.bottom,
+          left: rect.left,
+          width: Math.max(300, rect.width)
+        });
+      }
+    };
+
+    update();
+    const timer = setTimeout(update, 50);
+
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [editing, show]);
 
   const startEditing = () => {
     setLocalValue(value);
@@ -20,11 +111,20 @@ export function SearchableCell({ value, resolvedValue, options, onSelect, fontWe
 
   const displayValue = resolvedValue !== undefined ? resolvedValue : value;
   const filterText = (localValue === value || localValue === '...' || !localValue) ? '' : localValue.toString().toLowerCase();
-  const filtered = options.filter(o => o.toLowerCase().includes(filterText)).slice(0, 15);
+
+  const safeOptions = React.useMemo(() => {
+    if (!Array.isArray(options)) return [];
+    return options
+      .map(o => o !== null && o !== undefined ? o.toString() : '')
+      .filter(o => o.trim() !== '');
+  }, [options]);
+
+  const filtered = safeOptions.filter(o => o.toLowerCase().includes(filterText)).slice(0, 15);
 
   if (editing) return (
     <div style={{ position: 'relative', zIndex: 9999 }} onMouseDown={e => isRefMode && e.preventDefault()}>
       <input
+        ref={inputRef}
         autoFocus
         style={{ ...s.inputMinimal, fontWeight, background: 'transparent', border: 'none', outline: 'none', boxSizing: 'border-box', width: '100%', textAlign: 'inherit' }}
         value={localValue === '...' ? '' : localValue}
@@ -43,7 +143,7 @@ export function SearchableCell({ value, resolvedValue, options, onSelect, fontWe
         placeholder="..."
       />
       {show && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, zIndex: 10000, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', maxHeight: 200, overflowY: 'auto', marginTop: 2, minWidth: 300 }}>
+        <div style={{ position: 'fixed', top: coords.top + 2, left: coords.left, width: coords.width, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, zIndex: 100000, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', maxHeight: 200, overflowY: 'auto' }}>
           {filtered.length > 0 ? filtered.map((opt, i) => (
             <div
               key={i}
@@ -88,23 +188,42 @@ export function SearchableCell({ value, resolvedValue, options, onSelect, fontWe
       onDoubleClick={(e) => { e.stopPropagation(); startEditing(); }}
       title={isAlias ? `Dynamic Spec Alias: ${value}` : ''}
     >
-      {isAlias ? `📎 ${displayValue}` : (displayValue || '...')}
+      {isAlias ? `📎 ${displayValue}` : (isEmpty ? '' : (displayValue || '...'))}
     </div>
   );
 }
 
 function EditableCell({ item, idx, k, width, onUpdateRow, isRefMode, valueOverride }) {
   const [editing, setEditing] = useState(false);
-  const displayVal = valueOverride !== undefined ? valueOverride : (item[k] || '');
+  const [localValue, setLocalValue] = useState(item[k] || '');
+
+  useEffect(() => {
+    setLocalValue(item[k] || '');
+  }, [item[k]]);
+
+  const commitEdit = () => {
+    if (!editing) return;
+    setEditing(false);
+    if (localValue !== (item[k] || '')) {
+      onUpdateRow(idx, k, localValue);
+    }
+  };
+
+  const hasRealValue = item[k] !== undefined && item[k] !== null && item[k] !== '' && item[k] !== '...' && item[k] !== '(ks)';
+  const displayVal = hasRealValue ? item[k] : (valueOverride !== undefined ? valueOverride : '');
+
+  const displayLocalValue = (localValue === '...' || localValue === '(ks)') ? '' : localValue;
+  const placeholderVal = valueOverride !== undefined && valueOverride !== '...' && valueOverride !== '(ks)' ? valueOverride : '...';
 
   if (editing) return (
     <input
       autoFocus
       style={{ ...s.inputMinimal, width: width || '100%', background: 'transparent', border: 'none', outline: 'none', boxSizing: 'border-box', textAlign: 'inherit' }}
-      value={item[k] || ''}
-      onChange={e => onUpdateRow(idx, k, e.target.value)}
-      onBlur={() => setEditing(false)}
-      onKeyDown={e => e.key === 'Enter' && setEditing(false)}
+      value={displayLocalValue}
+      onChange={e => setLocalValue(e.target.value)}
+      onBlur={commitEdit}
+      onKeyDown={e => e.key === 'Enter' && commitEdit()}
+      placeholder={placeholderVal}
     />
   );
   return (
@@ -117,20 +236,38 @@ function EditableCell({ item, idx, k, width, onUpdateRow, isRefMode, valueOverri
   );
 }
 
-export function FormulaInput({ value, evaluated, onChange, onFocus, onBlur, isHeader = false, textAlign }) {
+export function FormulaInput({ value, evaluated, onChange, onFocus, onBlur, isHeader = false, textAlign, onTempChange }) {
   const [editing, setEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value || '');
   const isFormula = value?.toString().startsWith('=');
 
+  useEffect(() => {
+    setLocalValue(value || '');
+  }, [value]);
+
+  const commitEdit = () => {
+    if (!editing) return;
+    setEditing(false);
+    if (localValue !== (value || '')) {
+      onChange(localValue);
+    }
+    if (onBlur) onBlur();
+  };
+
   const handleFocus = () => {
+    if (editing) return;
     setEditing(true);
-    if (onFocus) onFocus(onChange);
+    if (onFocus) {
+      setTimeout(() => {
+        onFocus(setLocalValue);
+      }, 0);
+    }
   };
 
   const handleBlur = () => {
     setTimeout(() => {
-      setEditing(false);
-      if (onBlur) onBlur();
-    }, 200);
+      commitEdit();
+    }, 100);
   };
 
   const align = textAlign || (isHeader ? 'center' : 'right');
@@ -140,22 +277,41 @@ export function FormulaInput({ value, evaluated, onChange, onFocus, onBlur, isHe
     <input
       autoFocus
       style={{ ...s.inputMinimal, background: 'transparent', border: 'none', outline: 'none', textAlign: align, boxSizing: 'border-box', width: '100%' }}
-      value={value}
+      value={localValue}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      onChange={e => onChange(e.target.value)}
+      onChange={e => {
+        const val = e.target.value;
+        setLocalValue(val);
+        if (onTempChange) onTempChange(val);
+      }}
       onKeyDown={e => {
         if (e.key === 'Enter') {
-          setEditing(false);
-          if (onBlur) onBlur();
+          commitEdit();
         }
       }}
     />
   );
 
+  const formatDisplayValue = (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    const num = Number(val);
+    if (!isNaN(num) && typeof val !== 'boolean') {
+      if (Number.isInteger(num)) return String(num);
+      const rounded = Math.round(num * 10) / 10;
+      if (Number.isInteger(rounded)) return String(rounded);
+      return String(rounded).replace('.', ',');
+    }
+    return val;
+  };
+
+  const displayEvaluated = (evaluated === undefined || evaluated === null || (typeof evaluated === 'number' && isNaN(evaluated)))
+    ? ''
+    : formatDisplayValue(evaluated);
+
   return (
     <div style={{ cursor: 'text', padding: '1px 2px', display: 'flex', flexDirection: 'column', alignItems: flexAlign, minHeight: isHeader ? 16 : 20, justifyContent: 'center' }} onDoubleClick={handleFocus}>
-      <div style={{ fontSize: 12, fontWeight: 700, textAlign: align, color: isFormula ? '#2563eb' : '#111' }}>{evaluated}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, textAlign: align, color: isFormula ? '#2563eb' : '#111' }}>{displayEvaluated}</div>
       {isFormula && !isHeader && <div style={{ fontSize: 8, color: '#94a3b8', marginTop: -2, textAlign: align }}>{value}</div>}
     </div>
   );
@@ -164,7 +320,367 @@ export function FormulaInput({ value, evaluated, onChange, onFocus, onBlur, isHe
 
 
 
-export default function SharedModuleTable({
+const formatIndo2Digit = (val, key) => {
+  if (val === undefined || val === null || val === '' || isNaN(val)) return '';
+  const num = Number(val);
+  
+  // For luas_gross and prop_harga, if the value is 0, display as blank
+  if ((key === 'luas_gross' || key === 'prop_harga') && num === 0) {
+    return '';
+  }
+  
+  if (num === 0) return '0';
+  
+  // Round to nearest 1 decimal place (1 decimal digit)
+  const rounded = Math.round(num * 10) / 10;
+  
+  if (Number.isInteger(rounded)) {
+    return String(rounded);
+  }
+  return String(rounded).replace('.', ',');
+};
+
+
+
+const SharedModuleTableRow = React.memo(React.forwardRef(({
+  item,
+  items,
+  rowsWithParent,
+  rowIdx,
+  rowOffset,
+  isRefMode,
+  selectedCoordInRow,
+  refCoordsStr,
+  parts,
+  setupItems,
+  spec,
+  parent,
+  showCNC,
+  hplOptions,
+  edgOptions,
+  bhnOptions,
+  onUpdateRow,
+  onDeleteRow,
+  onReorder,
+  onCellClick,
+  getCellRenderer,
+  specAliases,
+  calcResult,
+}, ref) => {
+  const rowNumber = (item._idx !== undefined ? item._idx : rowIdx + rowOffset) + 1;
+  const handleCellClick = (col) => onCellClick && onCellClick(`${col}${rowNumber}`);
+  // Pre-parse refCoords string (only coords relevant to this row)
+  const refCoordsArr = refCoordsStr ? refCoordsStr.split(',') : [];
+  const isSel = (col) => col !== 'A' && selectedCoordInRow === `${col}${rowNumber}`;
+  const isRef = (col) => col !== 'A' && refCoordsArr.includes(`${col}${rowNumber}`);
+  const isSetUp = item.type === 'Set_up';
+  const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
+  const cellStyle = (col, extra = {}) => ({
+     ...s.td,
+     textAlign: centerCols.includes(col) ? 'center' : 'left',
+     ...extra,
+     ...(isSetUp ? { background: '#fefcbf' } : {}),
+     ...(isSel(col) ? { outline: '2px solid #2563eb', outlineOffset: -2, zIndex: 10, position: 'relative' } : {}),
+     ...(isRef(col) && !isSel(col) ? { outline: '2px dashed #10b981', outlineOffset: -2, background: '#ecfdf5', zIndex: 5, position: 'relative' } : {}),
+  });
+  const handleMD = (e, col) => {
+     if (isRefMode && !isSel(col)) e.preventDefault();
+     handleCellClick(col);
+  };
+
+  const currentType = item.type || '';
+  let componentOptions = [];
+  if (currentType === 'prt') componentOptions = parts.map(p => p.name);
+  else if (currentType === 'Set_up') componentOptions = setupItems.map(s => s.name);
+  else componentOptions = parts.map(p => p.name);
+
+  return (
+    <tr
+      ref={ref}
+      draggable
+      onDragStart={e => { e.dataTransfer.setData('text/plain', rowIdx); e.currentTarget.style.opacity = '0.4'; }}
+      onDragEnd={e => { e.currentTarget.style.opacity = '1'; }}
+      onDragOver={e => e.preventDefault()}
+      onDrop={e => {
+        e.preventDefault();
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+        if (onReorder) onReorder(fromIdx, rowIdx);
+      }}
+      style={{ borderBottom: '1px solid #f3f4f6', cursor: 'grab', background: item.type === 'Set_up' ? '#fefcbf' : 'transparent' }}
+    >
+      <td style={cellStyle('A', { background: '#f8fafc', borderRight: '1px solid #e2e8f0', color: '#94a3b8', fontSize: 9, textAlign: 'center', fontWeight: 700 })}>{rowNumber}</td>
+      <td style={cellStyle('A', { fontSize: 10, textAlign: 'center' })}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <span style={{ cursor: 'grab', color: '#cbd5e1', fontSize: 12 }}>⋮⋮</span>
+          <span style={{ color: '#666' }}>{rowNumber}</span>
+        </div>
+      </td>
+      <td style={cellStyle('B')} onMouseDown={(e) => handleMD(e, 'B')}><EditableCell item={item} idx={rowIdx} k="cat" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
+      <td className="has-dropdown" style={cellStyle('C')} onMouseDown={(e) => handleMD(e, 'C')}><SearchableCell value={item.type} options={['prt', 'Set_up', 'kab', 'Ref', 'proses_khusus']} onSelect={v => onUpdateRow(rowIdx, 'type', v)} isRefMode={isRefMode} /></td>
+      <td style={cellStyle('D')} onMouseDown={(e) => handleMD(e, 'D')}>
+        {(() => {
+          const smMatch = item.type === 'Set_up' ? setupItems.find(s => s.name?.trim() === item.komp?.trim()) : null;
+          return <EditableCell item={item} idx={rowIdx} k="kode" valueOverride={smMatch?.ks} onUpdateRow={onUpdateRow} isRefMode={isRefMode} />;
+        })()}
+      </td>
+      <td style={cellStyle('E')} onMouseDown={(e) => handleMD(e, 'E')}><EditableCell item={item} idx={rowIdx} k="tpk" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
+      <td style={cellStyle('F')} onMouseDown={(e) => handleMD(e, 'F')}>
+        {(() => {
+          const setupMatch = setupItems.find(s => s.name?.trim() === item.komp?.trim());
+          const noDisplay = setupMatch !== undefined ? (setupMatch.no ?? '...') : '...';
+          return (
+            <div style={{ width: '100%', minHeight: 18, fontSize: 13, textAlign: 'center', color: setupMatch ? '#111' : '#9ca3af' }}>
+              {noDisplay}
+            </div>
+          );
+        })()}
+      </td>
+      <td style={cellStyle('G')} onMouseDown={(e) => handleMD(e, 'G')}><EditableCell item={item} idx={rowIdx} k="opt" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
+      <td className="has-dropdown" style={cellStyle('H')} onMouseDown={(e) => handleMD(e, 'H')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          {item.type === 'Set_up' && <Badge color="indigo">SUB</Badge>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+             <SearchableCell
+              value={item.komp}
+              options={componentOptions}
+              onSelect={v => {
+                const cleanV = v?.trim();
+                const updates = { komp: cleanV };
+                const partMatch = parts.find(p => p.name?.trim() === cleanV);
+                if (partMatch) {
+                  if (partMatch.val) {
+                    updates.bid = partMatch.val;
+                  }
+                  if (partMatch.bhn) updates.bhn = partMatch.bhn;
+                  if (partMatch.t !== undefined) updates.t_bhn = partMatch.t;
+                  if (partMatch.code) updates.cat = partMatch.code;
+                  if (partMatch.ks) updates.kode = partMatch.ks;
+                  if (partMatch.opt !== undefined) updates.opt = partMatch.opt;
+
+                  if (partMatch.l !== undefined) updates.l_fin = partMatch.l;
+                  if (partMatch.d !== undefined) updates.d_fin = partMatch.d;
+                  if (partMatch.p1 !== undefined) updates.p1 = partMatch.p1;
+                  if (partMatch.p2 !== undefined) updates.p2 = partMatch.p2;
+                  if (partMatch.l1 !== undefined) updates.l1 = partMatch.l1;
+                  if (partMatch.l2 !== undefined) updates.l2 = partMatch.l2;
+
+                  if (partMatch.lap_luar !== undefined) updates.lap_luar = partMatch.lap_luar;
+                  if (partMatch.lap_dalam !== undefined) updates.lap_dalam = partMatch.lap_dalam;
+                  if (partMatch.edg_p1 !== undefined) updates.edg_p1 = partMatch.edg_p1;
+                  if (partMatch.edg_p2 !== undefined) updates.edg_p2 = partMatch.edg_p2;
+                  if (partMatch.edg_l1 !== undefined) updates.edg_l1 = partMatch.edg_l1;
+                  if (partMatch.edg_l2 !== undefined) updates.edg_l2 = partMatch.edg_l2;
+                  if (partMatch.engsel !== undefined) updates.engsel = partMatch.engsel;
+                  if (partMatch.rel !== undefined) updates.rel = partMatch.rel;
+                  if (partMatch.q_dormec !== undefined) updates.dormec = partMatch.q_dormec > 0 ? String(partMatch.q_dormec) : '';
+                  if (partMatch.q_engsel !== undefined) updates.q_engsel = partMatch.q_engsel;
+                  if (partMatch.q_rel !== undefined) updates.q_rel = partMatch.q_rel;
+                  if (partMatch.q_dormec !== undefined) updates.q_dormec = partMatch.q_dormec;
+                  if (partMatch.q_minifix !== undefined) updates.q_minifix = partMatch.q_minifix;
+                  if (partMatch.q_dowel !== undefined) updates.q_dowel = partMatch.q_dowel;
+                  if (partMatch.tipe_siku !== undefined) updates.siku_joint = partMatch.tipe_siku;
+                  if (partMatch.tipe_screw !== undefined) updates.screw_jf = partMatch.tipe_screw;
+                  if (partMatch.profil3 !== undefined) updates.profil3 = partMatch.profil3;
+                  if (partMatch.profil2 !== undefined) updates.profil2 = partMatch.profil2;
+                  if (partMatch.profil !== undefined) updates.profil = partMatch.profil;
+                  if (partMatch.v !== undefined) updates.v = partMatch.v;
+                  if (partMatch.v2 !== undefined) updates.v2 = partMatch.v2;
+                  if (partMatch.h !== undefined) updates.h = partMatch.h;
+                  if (partMatch.anodize !== undefined) updates.anodize = partMatch.anodize;
+                  if (partMatch.p_val !== undefined) updates.p_val = partMatch.p_val;
+                  if (partMatch.q_anodize !== undefined) updates.q_anodize = partMatch.q_anodize;
+                  if (partMatch.q_siku !== undefined) updates.q_siku = partMatch.q_siku;
+                  if (partMatch.q_screw !== undefined) updates.q_screw = partMatch.q_screw;
+                  if (partMatch.minifix !== undefined) updates.minifix = partMatch.minifix;
+                  if (partMatch.dowel !== undefined) updates.dowel = partMatch.dowel;
+                  const setupMatch = setupItems.find(s => s.name?.trim() === cleanV);
+                  if (setupMatch && setupMatch.no !== undefined) updates.no = setupMatch.no; else updates.no = '';
+                } else {
+                  const smatch = setupItems.find(s => s.name?.trim() === cleanV);
+                  if (smatch) {
+                    if (smatch.ks) updates.kode = smatch.ks;
+                    if (smatch.no !== undefined) updates.no = smatch.no;
+                  }
+                }
+                onUpdateRow(rowIdx, updates);
+              }}
+              fontWeight={item.type === 'Set_up' ? 700 : 600}
+              isRefMode={isRefMode}
+            />
+          </div>
+        </div>
+      </td>
+      <td style={cellStyle('I')} onMouseDown={(e) => handleMD(e, 'I')}>{getCellRenderer(item, rowIdx, 'p')}</td>
+      <td style={cellStyle('J')} onMouseDown={(e) => handleMD(e, 'J')}>{getCellRenderer(item, rowIdx, 'l')}</td>
+      <td style={cellStyle('K')} onMouseDown={(e) => handleMD(e, 'K')}>{getCellRenderer(item, rowIdx, 't')}</td>
+      <td style={cellStyle('L')} onMouseDown={(e) => handleMD(e, 'L')}>{getCellRenderer(item, rowIdx, 'sub')}</td>
+      <td style={cellStyle('M')} onMouseDown={(e) => handleMD(e, 'M')}>{getCellRenderer(item, rowIdx, 'jml')}</td>
+      <td className="has-dropdown" style={cellStyle('N', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'N')}>
+        <SearchableCell
+          value={item.bhn || ''}
+          resolvedValue={resolveAlias(item.bhn, specAliases)}
+          options={bhnOptions.length ? bhnOptions : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC']}
+          onSelect={v => onUpdateRow(rowIdx, 'bhn', v)}
+          isRefMode={isRefMode}
+        />
+      </td>
+      <td style={cellStyle('O', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'O')}>{getCellRenderer(item, rowIdx, 't_bhn')}</td>
+      <td style={cellStyle('P', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'P')}>{getCellRenderer(item, rowIdx, 'l_fin')}</td>
+      <td style={cellStyle('Q', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'Q')}>{getCellRenderer(item, rowIdx, 'd_fin')}</td>
+      <td style={cellStyle('R', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'R')}>{getCellRenderer(item, rowIdx, 'p1')}</td>
+      <td style={cellStyle('S', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'S')}>{getCellRenderer(item, rowIdx, 'p2')}</td>
+      <td style={cellStyle('T', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'T')}>{getCellRenderer(item, rowIdx, 'l1')}</td>
+      <td style={cellStyle('U', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'U')}>{getCellRenderer(item, rowIdx, 'l2')}</td>
+      <td className="has-dropdown" style={cellStyle('V', { background: '#dbeafe' })} onMouseDown={(e) => handleMD(e, 'V')}>
+        {(() => {
+          const lFinEval = evaluateFormula(item.l_fin, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases);
+          const isLFinEmpty = isFinishingEmpty(lFinEval);
+          let resolvedVal = '';
+          if (!isLFinEmpty) {
+            const lookupVal = resolveLapisanFromCode(lFinEval, spec?.categories || []);
+            resolvedVal = lookupVal || '...';
+          }
+          return (
+            <SearchableCell
+              value={item.lap_luar || ''}
+              resolvedValue={resolvedVal}
+              options={hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos']}
+              onSelect={v => onUpdateRow(rowIdx, 'lap_luar', v)}
+              isRefMode={isRefMode}
+              isEmpty={isLFinEmpty}
+            />
+          );
+        })()}
+      </td>
+      <td style={cellStyle('W', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'W')}>{getCellRenderer(item, rowIdx, 't_luar')}</td>
+      <td className="has-dropdown" style={cellStyle('X', { background: '#ede9fe' })} onMouseDown={(e) => handleMD(e, 'X')}>
+        {(() => {
+          const dFinEval = evaluateFormula(item.d_fin, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases);
+          const isDFinEmpty = isFinishingEmpty(dFinEval);
+          let resolvedVal = '';
+          if (!isDFinEmpty) {
+            const lookupVal = resolveLapisanFromCode(dFinEval, spec?.categories || []);
+            resolvedVal = lookupVal || '...';
+          }
+          return (
+            <SearchableCell
+              value={item.lap_dalam || ''}
+              resolvedValue={resolvedVal}
+              options={['', ...(hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos'])]}
+              onSelect={v => onUpdateRow(rowIdx, 'lap_dalam', v)}
+              isRefMode={isRefMode}
+              isEmpty={isDFinEmpty}
+            />
+          );
+        })()}
+      </td>
+      <td style={cellStyle('Y', { background: '#f3e8ff' })} onMouseDown={(e) => handleMD(e, 'Y')}>{getCellRenderer(item, rowIdx, 't_dalam')}</td>
+      <td className="has-dropdown" style={cellStyle('Z', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'Z')}>
+        <SearchableCell
+          value={item.edg_p1 || ''}
+          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.p1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
+          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+          onSelect={v => onUpdateRow(rowIdx, 'edg_p1', v)}
+          isRefMode={isRefMode}
+        />
+      </td>
+      <td className="has-dropdown" style={cellStyle('AA', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'AA')}>
+        <SearchableCell
+          value={item.edg_p2 || ''}
+          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.p2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
+          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+          onSelect={v => onUpdateRow(rowIdx, 'edg_p2', v)}
+          isRefMode={isRefMode}
+        />
+      </td>
+      <td className="has-dropdown" style={cellStyle('AB', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AB')}>
+        <SearchableCell
+          value={item.edg_l1 || ''}
+          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.l1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
+          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+          onSelect={v => onUpdateRow(rowIdx, 'edg_l1', v)}
+          isRefMode={isRefMode}
+        />
+      </td>
+      <td className="has-dropdown" style={cellStyle('AC', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AC')}>
+        <SearchableCell
+          value={item.edg_l2 || ''}
+          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.l2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
+          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+          onSelect={v => onUpdateRow(rowIdx, 'edg_l2', v)}
+          isRefMode={isRefMode}
+        />
+      </td>
+      {(() => {
+        const calc = calcResult;
+        return EXTRA_COLUMNS.map((col, idx) => {
+          const globalIdx = 30 + idx;
+          if (!showCNC && globalIdx >= 44) return null;
+          const colLetter = LETTERS[29 + idx];
+
+          const handleMD = (e) => {
+            if (isRefMode && !col.isCalc) e.preventDefault();
+            handleCellClick(colLetter);
+          };
+
+          const isSel = selectedCoordInRow === `${colLetter}${rowNumber}`;
+          const isRef = refCoordsArr.includes(`${colLetter}${rowNumber}`);
+
+          const center = !['comp_name', 'comp_desc', 'bhn_desc', 'csv_format', 'desc_lap', 'desc_edg', 'anodize'].includes(col.key);
+
+          const cStyle = {
+            ...s.td,
+            textAlign: center ? 'center' : 'left',
+            background: col.bg || (item.type === 'Set_up' ? '#fefcbf' : 'transparent'),
+            ...(isSel ? { outline: '2px solid #2563eb', outlineOffset: -2, zIndex: 10, position: 'relative' } : {}),
+            ...(isRef && !isSel ? { outline: '2px dashed #10b981', outlineOffset: -2, background: '#ecfdf5', zIndex: 5, position: 'relative' } : {}),
+          };
+
+          if (col.key === 'x_sep' || col.key === 'x_sep2') {
+            return <td key={col.key} style={cStyle}>x</td>;
+          }
+
+          if (col.isCalc) {
+            const val = calc ? calc[col.key] : '';
+            let formatted = '';
+            if (['p_gross', 'l_gross', 'keliling', 'luas_gross', 'prop_harga'].includes(col.key)) {
+              formatted = formatIndo2Digit(val, col.key);
+            } else {
+              formatted = typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(3)) : (val || '-');
+            }
+            return (
+              <td key={col.key} style={cStyle} title={String(val || '')}>
+                {formatted}
+              </td>
+            );
+          }
+
+          return (
+            <td key={col.key} style={cStyle} onMouseDown={handleMD}>
+              {getCellRenderer(item, rowIdx, col.key)}
+            </td>
+          );
+        });
+      })()}
+      <td style={s.td}><button style={{ ...s.iconBtn, color: '#fca5a5' }} onClick={() => onDeleteRow(rowIdx)}>✕</button></td>
+    </tr>
+  );
+}), (prevProps, nextProps) => {
+  // Custom memo comparator — only re-render a row when its own data changes.
+  // selectedCoordInRow and refCoordsStr are pre-filtered to this row only,
+  // so changing selection in a different row won't trigger a re-render here.
+  return (
+    prevProps.item === nextProps.item &&
+    prevProps.calcResult === nextProps.calcResult &&
+    prevProps.selectedCoordInRow === nextProps.selectedCoordInRow &&
+    prevProps.refCoordsStr === nextProps.refCoordsStr &&
+    prevProps.isRefMode === nextProps.isRefMode &&
+    prevProps.showCNC === nextProps.showCNC &&
+    prevProps.specAliases === nextProps.specAliases
+  );
+});
+
+function SharedModuleTable({
   parts = [],
   setupItems = [],
   items = [],
@@ -181,7 +697,7 @@ export default function SharedModuleTable({
   renderCustomCell = null,
   isRefMode = false,
   selectedCoord = null,
-  refCoords = [],
+  refCoordsStr = '',
   hideHeaderRow = false,
   hideCardFrame = false,
   parent = {},
@@ -195,6 +711,24 @@ export default function SharedModuleTable({
   showCNC = false,
   sectionType = 'module'
 }) {
+  const specAliases = useMemo(() => buildAliasMap(spec), [spec]);
+  const refCoordsArr = useMemo(() => refCoordsStr ? refCoordsStr.split(',') : [], [refCoordsStr]);
+  // Build rows array that includes parent at index 0, matching the flat breakdown array format
+  // used by sync.js and ReportPage. This ensures cell refs like =I1 resolve to the parent row.
+  const rowsWithParent = useMemo(
+    () => (parent && Object.keys(parent).length > 0 ? [parent, ...items] : items),
+    [parent, items]
+  );
+
+  // Pre-compute calcBreakdownItem for every row once.
+  // This moves the heavy formula work out of each row render,
+  // so row React.memo can skip re-rendering untouched rows.
+  const calcResults = useMemo(() => {
+    return items.map(item =>
+      item.komp ? calcBreakdownItem(item, rowsWithParent, spec, parent) : null
+    );
+  }, [items, rowsWithParent, spec, parent]);
+
   const [widths, setWidths] = useState([
     30,  // Row index column
     35,  // Column A: #
@@ -203,47 +737,82 @@ export default function SharedModuleTable({
     45,  // Column D: Kod
     45,  // Column E: Tpk
     45,  // Column F: No*
-    30,  // Column F2: Opt (BARU)
-    400, // Column G: Komponen
-    75,  // Column H: P
-    75,  // Column I: L
-    40,  // Column J: T
-    40,  // Column K: Sub
-    40,  // Column L: Jml
-    60,  // Column M: Bhn
-    45,  // Column N: T.Bhn
-    45,  // Column O: L
-    45,  // Column P: D
-    45,  // Column Q: P1
-    45,  // Column R: P2
-    45,  // Column S: L1
-    45,  // Column T: L2
-    120, // Column U: Luar
-    35,  // Column U2: T.Luar (BARU)
-    120, // Column V: Dalam
-    35,  // Column V2: T.Dlm (BARU)
-    110, // Column W: Edg P1
-    110, // Column X: Edg P2
-    110, // Column Y: Edg L1
-    110, // Column Z: Edg L2
-    40,  // Column AA: engsel
-    40,  // Column AB: rel
-    40,  // Column AC: dormec
-    40,  // Column AD: minifix
-    40,  // Column AE: dowel
-    35,  // Column AF2: q_siku (BARU)
-    35,  // Column AG2: q_screw (BARU)
-    // showCNC columns:
-    120, // Column AF: CNC Size
-    50,  // Column AF3: T.Edg P1
-    50,  // Column AF4: T.Edg P2
-    50,  // Column AF5: T.Edg L1
-    50,  // Column AF6: T.Edg L2
-    55,  // Column AF7: M²/panel
-    55,  // Column AF8: M² Total
-    55,  // Column AF9: Klg/panel
-    280, // Column AG: Komp CNC
-    240, // Column AH: CSV
+    30,  // Column G: Opt
+    400, // Column H: Komponen
+    75,  // Column I: P
+    75,  // Column J: L
+    40,  // Column K: T
+    40,  // Column L: Sub
+    40,  // Column M: Jml
+    60,  // Column N: Bhn
+    45,  // Column O: T.Bhn
+    45,  // Column P: L
+    45,  // Column Q: D
+    45,  // Column R: P1
+    45,  // Column S: P2
+    45,  // Column T: L1
+    45,  // Column U: L2
+    120, // Column V: Luar
+    35,  // Column W: T.Luar
+    120, // Column X: Dalam
+    35,  // Column Y: T.Dlm
+    110, // Column Z: Edg P1
+    110, // Column AA: Edg P2
+    110, // Column AB: Edg L1
+    110, // Column AC: Edg L2
+    
+    // EXTRA_COLUMNS (index 30 to 80):
+    100, // Column AD: Profil 3
+    100, // Column AE: Profil 2
+    100, // Column AF: Profil
+    60,  // Column AG: Siku joint
+    60,  // Column AH: Screw Jf
+    60,  // Column AI: Dormec ind
+    80,  // Column AJ: Rel ind
+    80,  // Column AK: Engsel ind
+    80,  // Column AL: V ind
+    80,  // Column AM: V2 ind
+    80,  // Column AN: H ind
+    150, // Column AO: Nama barang (anodize)
+    70,  // Column AP: Panjang (anodize)
+    70,  // Column AQ: Jumlah (anodize)
+    30,  // Column AR: x pemisah
+    50,  // Column AS: V lap
+    60,  // Column AT: V edg
+    160, // Column AU: Deskripsi lapisan
+    160, // Column AV: Deskripsi edging
+    200, // Column AW: Deskripsi Komponen
+    250, // Column AX: Nama Komponen
+    30,  // Column AY: x pemisah 2
+    60,  // Column AZ: Minifix standard
+    60,  // Column BA: Dowel standard
+    60,  // Column BB: @siku
+    60,  // Column BC: @screw
+    60,  // Column BD: Dormec total
+    60,  // Column BE: Engsel total
+    60,  // Column BF: Rel total
+    60,  // Column BG: P Gross
+    60,  // Column BH: L Gross
+    70,  // Column BI: 2(P+L)
+    70,  // Column BJ: (PxL)
+    100, // Column BK: Bahan Dasar
+    180, // Column BL: Deskripsi Bahan
+    70,  // Column BM: /panel
+    110, // Column BN: jumlah anodize @
+    70,  // Column BO: minifix @
+    70,  // Column BP: dowel @
+    70,  // Column BQ: jml siku
+    70,  // Column BR: jml screw
+    60,  // Column BS: M²
+    60,  // Column BT: M³
+    50,  // Column BU: T_P1
+    50,  // Column BV: T_P2
+    50,  // Column BW: T_L1
+    50,  // Column BX: T_L2
+    60,  // Column BY: P_cnc
+    60,  // Column BZ: L_cnc
+    120, // Column CA: ukuran CNC
+    240, // Column CB: CSV Format
     40   // last column (Delete action / Parent text)
   ]);
 
@@ -259,7 +828,6 @@ export default function SharedModuleTable({
         const next = [...prev];
         next[colIdx] = newWidth;
         return next;
-        return next;
       });
     };
 
@@ -272,66 +840,56 @@ export default function SharedModuleTable({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  const getColLetter = (k) => {
-    if (k === 'cat') return 'B';
-    if (k === 'type') return 'C';
-    if (k === 'kode') return 'D';
-    if (k === 'tpk') return 'E';
-    if (k === 'no') return 'F';
-    if (k === 'opt') return 'F2';
-    if (k === 'komp') return 'G';
-    if (k === 'p') return 'H';
-    if (k === 'l') return 'I';
-    if (k === 't') return 'J';
-    if (k === 'sub') return 'K';
-    if (k === 'jml') return 'L';
-    if (k === 'bhn') return 'M';
-    if (k === 't_bhn') return 'N';
-    if (k === 'l_fin') return 'O';
-    if (k === 'd_fin') return 'P';
-    if (k === 'p1') return 'Q';
-    if (k === 'p2') return 'R';
-    if (k === 'l1') return 'S';
-    if (k === 'l2') return 'T';
-    if (k === 'lap_luar') return 'U';
-    if (k === 't_luar') return 'U2';
-    if (k === 'lap_dalam') return 'V';
-    if (k === 't_dalam') return 'V2';
-    if (k === 'edg_p1') return 'W';
-    if (k === 'edg_p2') return 'X';
-    if (k === 'edg_l1') return 'Y';
-    if (k === 'edg_l2') return 'Z';
-    if (k === 'q_engsel') return 'AA';
-    if (k === 'q_rel') return 'AB';
-    if (k === 'q_dormec') return 'AC';
-    if (k === 'q_minifix') return 'AD';
-    if (k === 'q_dowel') return 'AE';
-    if (k === 'q_siku') return 'AF2';
-    if (k === 'q_screw') return 'AG2';
-    // showCNC calculated output columns:
-    if (k === 't_p1') return 'T_P1';
-    if (k === 't_p2') return 'T_P2';
-    if (k === 't_l1') return 'T_L1';
-    if (k === 't_l2') return 'T_L2';
-    if (k === 'area_panel') return 'BN';
-    if (k === 'area_m2') return 'BW';
-    if (k === 'keliling_panel') return 'BM';
-    return '';
-  };
 
   const defaultRenderCell = (item, idx, key, isHeader = false) => {
     const rowNum = (item._idx !== undefined ? item._idx : idx + rowOffset) + 1;
     const colLetter = getColLetter(key);
     const coord = `${colLetter}${rowNum}`;
-    const centerCols = ['B', 'C', 'D', 'E', 'F', 'F2', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U2', 'V2', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF2', 'AG2', 'T_P1', 'T_P2', 'T_L1', 'T_L2', 'BN', 'BW', 'BM'];
+    const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
     const textAlign = centerCols.includes(colLetter) ? 'center' : (isHeader ? 'center' : 'right');
+
+    // Pass pre-built specAliases to avoid rebuilding inside evaluateFormula
+    let evaluatedVal = evaluateFormula(item[key], rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
+
+    // Auto-derive dynamic lookup values for hardware, profiling, anodizing from partsData
+    const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize'];
+    if (!isHeader && !item[key] && lookupKeys.includes(key)) {
+      const compName = evaluateFormula(item.komp, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
+      const defaultVal = getPartDefaultValue(compName, key);
+      if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
+        evaluatedVal = defaultVal;
+      }
+    }
+
+    // Auto-derive dynamic thickness for empty finishing layer thickness cells
+    if (!isHeader && !item[key]) {
+      if (key === 't_luar') {
+        const lFinEval = evaluateFormula(item.l_fin, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
+        let resolvedLapLuar = '';
+        if (!isFinishingEmpty(lFinEval)) {
+          resolvedLapLuar = resolveLapisanFromCode(lFinEval, spec?.categories || []) || '';
+        }
+        if (resolvedLapLuar) {
+          evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapLuar, specAliases), spec?.categories || []);
+        }
+      } else if (key === 't_dalam') {
+        const dFinEval = evaluateFormula(item.d_fin, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
+        let resolvedLapDalam = '';
+        if (!isFinishingEmpty(dFinEval)) {
+          resolvedLapDalam = resolveLapisanFromCode(dFinEval, spec?.categories || []) || '';
+        }
+        if (resolvedLapDalam) {
+          evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapDalam, specAliases), spec?.categories || []);
+        }
+      }
+    }
 
     return (
       <FormulaInput
         value={item[key]}
         isHeader={isHeader}
         textAlign={textAlign}
-        evaluated={evaluateFormula(item[key], items, spec, isHeader ? {} : parent)}
+        evaluated={evaluatedVal}
         onFocus={() => onCellClick && onCellClick(coord)}
         onChange={v => {
           if (isHeader) {
@@ -344,10 +902,12 @@ export default function SharedModuleTable({
     );
   };
 
-  const getCellRenderer = (item, idx, key, isHeader = false) => {
+  const getCellRenderer = useCallback((item, idx, key, isHeader = false) => {
     if (renderCustomCell) return renderCustomCell(item, idx, key);
     return defaultRenderCell(item, idx, key, isHeader);
-  };
+  }, [renderCustomCell, rowsWithParent, spec, parent, setupItems, specAliases, onCellClick, onUpdateRow, onUpdateParent]);
+
+
 
   const tableBody = (
     <div style={{ overflow: 'visible' }}>
@@ -376,17 +936,26 @@ export default function SharedModuleTable({
         .bom-table tbody tr td.has-dropdown {
           overflow: visible !important;
         }
+        .bom-table tbody tr:focus-within {
+          position: relative !important;
+          z-index: 1000 !important;
+        }
+        .bom-table tbody tr td.has-dropdown:focus-within {
+          position: relative !important;
+          z-index: 1001 !important;
+          overflow: visible !important;
+        }
       `}</style>
       {(() => {
         const tableWidth = widths.reduce((acc, w, idx) => {
-          if (!showCNC && idx >= 37 && idx <= 46) return acc;
+          if (!showCNC && idx >= 44 && idx < widths.length - 1) return acc;
           return acc + w;
         }, 0);
         return (
           <table className="bom-table" style={{ ...s.table, border: 'none', tableLayout: 'fixed', minWidth: tableWidth, width: tableWidth }}>
             <colgroup>
               {widths.map((w, idx) => {
-                if (!showCNC && idx >= 37 && idx <= 46) return null;
+                if (!showCNC && idx >= 44 && idx < widths.length - 1) return null;
                 return <col key={idx} style={{ width: w }} />;
               })}
             </colgroup>
@@ -406,12 +975,8 @@ export default function SharedModuleTable({
                     onMouseDown={e => handleMouseDown(e, 0)}
                   />
                 </th>
-                {['A', 'B', 'C', 'D', 'E', 'F', 'F2', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                  'S', 'T', 'U', 'U2', 'V', 'V2', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF2', 'AG2',
-                  'AF', 'AF3', 'AF4', 'AF5', 'AF6', 'AF7', 'AF8', 'AF9', 'AG', 'AH', ''
-                ].map((letter, i) => {
-                  const showCncLetters = ['AF', 'AF3', 'AF4', 'AF5', 'AF6', 'AF7', 'AF8', 'AF9', 'AG', 'AH'];
-                  if (!showCNC && showCncLetters.includes(letter)) return null;
+                {LETTERS.map((letter, i) => {
+                  if (!showCNC && i >= 43) return null; // hide letters AR to CF (indexes 43 to 79)
                   return (
                     <th
                       key={i}
@@ -475,35 +1040,36 @@ export default function SharedModuleTable({
                 <th style={{ ...s.th, background: '#dcfce7' }}>Edg P2</th>
                 <th style={{ ...s.th, background: '#fef9c3' }}>Edg L1</th>
                 <th style={{ ...s.th, background: '#fef9c3' }}>Edg L2</th>
-                {/* Fase 1: Hardware */}
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Eng</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Rel</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Dmc</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Mfx</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Dwl</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Sku</th>
-                <th style={{ ...s.th, background: '#fce7f3', fontSize: 9, textAlign: 'center' }}>Scr</th>
-                {/* Fase 2: Calculated Columns */}
-                {showCNC && <th style={{ ...s.th, background: '#f0fdf4', color: '#15803d', textAlign: 'center' }}>Ukuran CNC</th>}
-                {showCNC && <th style={{ ...s.th, background: '#dcfce7', color: '#166534', textAlign: 'center' }}>T.Edg P1</th>}
-                {showCNC && <th style={{ ...s.th, background: '#dcfce7', color: '#166534', textAlign: 'center' }}>T.Edg P2</th>}
-                {showCNC && <th style={{ ...s.th, background: '#fef9c3', color: '#854d0e', textAlign: 'center' }}>T.Edg L1</th>}
-                {showCNC && <th style={{ ...s.th, background: '#fef9c3', color: '#854d0e', textAlign: 'center' }}>T.Edg L2</th>}
-                {showCNC && <th style={{ ...s.th, background: '#e0f2fe', color: '#075985', textAlign: 'center' }}>M²/panel</th>}
-                {showCNC && <th style={{ ...s.th, background: '#e0f2fe', color: '#075985', textAlign: 'center' }}>M² total</th>}
-                {showCNC && <th style={{ ...s.th, background: '#ccfbf1', color: '#115e59', textAlign: 'center' }}>Klg/panel</th>}
-                {showCNC && <th style={{ ...s.th, background: '#eff6ff', color: '#1d4ed8', textAlign: 'left' }}>Nama Komponen BOM</th>}
-                {showCNC && <th style={{ ...s.th, background: '#f8fafc', color: '#475569', textAlign: 'left' }}>Format CSV CNC</th>}
+                {/* Dynamically render extra columns */}
+                {EXTRA_COLUMNS.map((col, idx) => {
+                  const globalIdx = 30 + idx;
+                  if (!showCNC && globalIdx >= 44) return null;
+                  return (
+                    <th
+                      key={col.key}
+                      style={{
+                        ...s.th,
+                        background: col.bg,
+                        textAlign: col.key.startsWith('nama') || col.key.startsWith('desc') || col.key.startsWith('csv') || col.key.startsWith('bhn') ? 'left' : 'center',
+                        fontSize: col.label.length > 10 ? 9 : 10
+                      }}
+                    >
+                      {col.label}
+                    </th>
+                  );
+                })}
                 <th style={{ ...s.th }}></th>
               </tr>
             </thead>
             <tbody>
               {parent && Object.keys(parent).length > 0 && (() => {
+                const rowsWithParent = [parent, ...items];
+                const calc = (parent.komp || parent.modul) ? calcBreakdownItem(parent, rowsWithParent, spec, {}) : null;
                 const parentRowNumber = (parent._idx !== undefined ? parent._idx : 0) + 1;
                 const handleCellClick = (col) => onCellClick && onCellClick(`${col}${parentRowNumber}`);
-                const isSel = (col) => selectedCoord === `${col}${parentRowNumber}`;
-                const isRef = (col) => refCoords.includes(`${col}${parentRowNumber}`);
-                const centerCols = ['B', 'C', 'D', 'E', 'F', 'F2', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U2', 'V2', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF2', 'AG2', 'T_P1', 'T_P2', 'T_L1', 'T_L2', 'BN', 'BW', 'BM'];
+                const isSel = (col) => col !== 'A' && selectedCoord === `${col}${parentRowNumber}`;
+                const isRef = (col) => col !== 'A' && refCoordsArr.includes(`${col}${parentRowNumber}`);
+                const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
                 const cellStyle = (col, extra = {}) => ({
                   ...s.td,
                   textAlign: centerCols.includes(col) ? 'center' : 'left',
@@ -529,7 +1095,7 @@ export default function SharedModuleTable({
                     <td style={{ ...s.td, background: parentBg, borderRight: '1px solid #e2e8f0', color: '#64748b', fontSize: 9, textAlign: 'center', fontWeight: 700 }}>
                       {parentRowNumber}
                     </td>
-                    <td style={cellStyle('A')} onMouseDown={(e) => handleMD(e, 'A')}>
+                    <td style={cellStyle('A')}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                         <span style={{ color: '#cbd5e1', fontSize: 12 }}>⋮⋮</span>
                         <span style={{ color: '#64748b', fontWeight: 600 }}>{parentRowNumber}</span>
@@ -550,10 +1116,10 @@ export default function SharedModuleTable({
                     <td style={cellStyle('F')} onMouseDown={(e) => handleMD(e, 'F')}>
                       <EditableCell item={parent} idx={-1} k="no" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} valueOverride={pType === 'Ref' ? '1' : undefined} />
                     </td>
-                    <td style={cellStyle('F2')} onMouseDown={(e) => handleMD(e, 'F2')}>
+                    <td style={cellStyle('G')} onMouseDown={(e) => handleMD(e, 'G')}>
                       <EditableCell item={parent} idx={-1} k="opt" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
                     </td>
-                    <td className="has-dropdown" style={cellStyle('G')} onMouseDown={(e) => handleMD(e, 'G')}>
+                    <td className="has-dropdown" style={cellStyle('H')} onMouseDown={(e) => handleMD(e, 'H')}>
                       {sectionType === 'lepasan' ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>PART LEPASAN</span>
@@ -581,413 +1147,198 @@ export default function SharedModuleTable({
                         </div>
                       )}
                     </td>
-                    <td style={cellStyle('H')} onMouseDown={(e) => handleMD(e, 'H')}>{getCellRenderer(parent, -1, 'p', true)}</td>
-                    <td style={cellStyle('I')} onMouseDown={(e) => handleMD(e, 'I')}>{getCellRenderer(parent, -1, 'l', true)}</td>
-                    <td style={cellStyle('J')} onMouseDown={(e) => handleMD(e, 'J')}>{getCellRenderer(parent, -1, 't', true)}</td>
-                    <td style={cellStyle('K')} onMouseDown={(e) => handleMD(e, 'K')}>
-                      <EditableCell item={parent} idx={-1} k="sub" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('L')} onMouseDown={(e) => handleMD(e, 'L')}>
-                      <EditableCell item={parent} idx={-1} k="jml" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('M', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'M')}>
+                    <td style={cellStyle('I')} onMouseDown={(e) => handleMD(e, 'I')}>{getCellRenderer(parent, -1, 'p', true)}</td>
+                    <td style={cellStyle('J')} onMouseDown={(e) => handleMD(e, 'J')}>{getCellRenderer(parent, -1, 'l', true)}</td>
+                    <td style={cellStyle('K')} onMouseDown={(e) => handleMD(e, 'K')}>{getCellRenderer(parent, -1, 't', true)}</td>
+                    <td style={cellStyle('L')} onMouseDown={(e) => handleMD(e, 'L')}>{getCellRenderer(parent, -1, 'sub', true)}</td>
+                    <td style={cellStyle('M')} onMouseDown={(e) => handleMD(e, 'M')}>{getCellRenderer(parent, -1, 'jml', true)}</td>
+                    <td className="has-dropdown" style={cellStyle('N', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'N')}>
                       <SearchableCell
                         value={parent.bhn || ''}
+                        resolvedValue={resolveAlias(parent.bhn, specAliases)}
                         options={bhnOptions.length ? bhnOptions : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC']}
                         onSelect={v => onUpdateParent('bhn', v)}
                         isRefMode={isRefMode}
                       />
                     </td>
-                    <td style={cellStyle('N', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'N')}>
-                      <EditableCell item={parent} idx={-1} k="t_bhn" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
+                    <td style={cellStyle('O', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'O')}>{getCellRenderer(parent, -1, 't_bhn', true)}</td>
+                    <td style={cellStyle('P', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'P')}>{getCellRenderer(parent, -1, 'l_fin', true)}</td>
+                    <td style={cellStyle('Q', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'Q')}>{getCellRenderer(parent, -1, 'd_fin', true)}</td>
+                    <td style={cellStyle('R', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'R')}>{getCellRenderer(parent, -1, 'p1', true)}</td>
+                    <td style={cellStyle('S', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'S')}>{getCellRenderer(parent, -1, 'p2', true)}</td>
+                    <td style={cellStyle('T', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'T')}>{getCellRenderer(parent, -1, 'l1', true)}</td>
+                    <td style={cellStyle('U', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'U')}>{getCellRenderer(parent, -1, 'l2', true)}</td>
+                    <td className="has-dropdown" style={cellStyle('V', { background: '#dbeafe' })} onMouseDown={(e) => handleMD(e, 'V')}>
+                      {(() => {
+                        const lFinEval = evaluateFormula(parent.l_fin, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases);
+                        const isLFinEmpty = isFinishingEmpty(lFinEval);
+                        let resolvedVal = '';
+                        if (!isLFinEmpty) {
+                          const lookupVal = resolveLapisanFromCode(lFinEval, spec?.categories || []);
+                          resolvedVal = lookupVal || '...';
+                        }
+                        return (
+                          <SearchableCell
+                            value={parent.lap_luar || ''}
+                            resolvedValue={resolvedVal}
+                            options={hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos']}
+                            onSelect={v => onUpdateParent('lap_luar', v)}
+                            isRefMode={isRefMode}
+                            isEmpty={isLFinEmpty}
+                          />
+                        );
+                      })()}
                     </td>
-                    <td style={cellStyle('O', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'O')}>{getCellRenderer(parent, -1, 'l_fin', true)}</td>
-                    <td style={cellStyle('P', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'P')}>{getCellRenderer(parent, -1, 'd_fin', true)}</td>
-                    <td style={cellStyle('Q', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'Q')}>{getCellRenderer(parent, -1, 'p1', true)}</td>
-                    <td style={cellStyle('R', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'R')}>{getCellRenderer(parent, -1, 'p2', true)}</td>
-                    <td style={cellStyle('S', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'S')}>{getCellRenderer(parent, -1, 'l1', true)}</td>
-                    <td style={cellStyle('T', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'T')}>{getCellRenderer(parent, -1, 'l2', true)}</td>
-                    <td className="has-dropdown" style={cellStyle('U', { background: '#dbeafe' })} onMouseDown={(e) => handleMD(e, 'U')}>
-                      <SearchableCell
-                        value={parent.lap_luar || ''}
-                        options={hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos']}
-                        onSelect={v => onUpdateParent('lap_luar', v)}
-                        isRefMode={isRefMode}
-                      />
+                    <td style={cellStyle('W', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'W')}>{getCellRenderer(parent, -1, 't_luar', true)}</td>
+                    <td className="has-dropdown" style={cellStyle('X', { background: '#ede9fe' })} onMouseDown={(e) => handleMD(e, 'X')}>
+                      {(() => {
+                        const dFinEval = evaluateFormula(parent.d_fin, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases);
+                        const isDFinEmpty = isFinishingEmpty(dFinEval);
+                        let resolvedVal = '';
+                        if (!isDFinEmpty) {
+                          const lookupVal = resolveLapisanFromCode(dFinEval, spec?.categories || []);
+                          resolvedVal = lookupVal || '...';
+                        }
+                        return (
+                          <SearchableCell
+                            value={parent.lap_dalam || ''}
+                            resolvedValue={resolvedVal}
+                            options={['', ...(hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos'])]}
+                            onSelect={v => onUpdateParent('lap_dalam', v)}
+                            isRefMode={isRefMode}
+                            isEmpty={isDFinEmpty}
+                          />
+                        );
+                      })()}
                     </td>
-                    <td style={cellStyle('U2', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'U2')}>
-                      <EditableCell item={parent} idx={-1} k="t_luar" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('V', { background: '#ede9fe' })} onMouseDown={(e) => handleMD(e, 'V')}>
-                      <SearchableCell
-                        value={parent.lap_dalam || ''}
-                        options={['', ...(hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos'])]}
-                        onSelect={v => onUpdateParent('lap_dalam', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td style={cellStyle('V2', { background: '#f3e8ff' })} onMouseDown={(e) => handleMD(e, 'V2')}>
-                      <EditableCell item={parent} idx={-1} k="t_dalam" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('W', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'W')}>
+                    <td style={cellStyle('Y', { background: '#f3e8ff' })} onMouseDown={(e) => handleMD(e, 'Y')}>{getCellRenderer(parent, -1, 't_dalam', true)}</td>
+                    <td className="has-dropdown" style={cellStyle('Z', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'Z')}>
                       <SearchableCell
                         value={parent.edg_p1 || ''}
+                        resolvedValue={resolveEdgingFromCode(evaluateFormula(parent.p1, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases), parent.cat, spec?.categories || [])}
                         options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
                         onSelect={v => onUpdateParent('edg_p1', v)}
                         isRefMode={isRefMode}
                       />
                     </td>
-                    <td className="has-dropdown" style={cellStyle('X', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'X')}>
+                    <td className="has-dropdown" style={cellStyle('AA', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'AA')}>
                       <SearchableCell
                         value={parent.edg_p2 || ''}
+                        resolvedValue={resolveEdgingFromCode(evaluateFormula(parent.p2, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases), parent.cat, spec?.categories || [])}
                         options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
                         onSelect={v => onUpdateParent('edg_p2', v)}
                         isRefMode={isRefMode}
                       />
                     </td>
-                    <td className="has-dropdown" style={cellStyle('Y', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'Y')}>
+                    <td className="has-dropdown" style={cellStyle('AB', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AB')}>
                       <SearchableCell
                         value={parent.edg_l1 || ''}
+                        resolvedValue={resolveEdgingFromCode(evaluateFormula(parent.l1, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases), parent.cat, spec?.categories || [])}
                         options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
                         onSelect={v => onUpdateParent('edg_l1', v)}
                         isRefMode={isRefMode}
                       />
                     </td>
-                    <td className="has-dropdown" style={cellStyle('Z', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'Z')}>
+                    <td className="has-dropdown" style={cellStyle('AC', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AC')}>
                       <SearchableCell
                         value={parent.edg_l2 || ''}
+                        resolvedValue={resolveEdgingFromCode(evaluateFormula(parent.l2, rowsWithParent, spec, {}, 0, setupItems, {}, specAliases), parent.cat, spec?.categories || [])}
                         options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
                         onSelect={v => onUpdateParent('edg_l2', v)}
                         isRefMode={isRefMode}
                       />
                     </td>
-                    <td style={cellStyle('AA', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AA')}>
-                      <EditableCell item={parent} idx={-1} k="q_engsel" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AB', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AB')}>
-                      <EditableCell item={parent} idx={-1} k="q_rel" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AC', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AC')}>
-                      <EditableCell item={parent} idx={-1} k="q_dormec" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AD', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AD')}>
-                      <EditableCell item={parent} idx={-1} k="q_minifix" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AE', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AE')}>
-                      <EditableCell item={parent} idx={-1} k="q_dowel" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AF2', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AF2')}>
-                      <EditableCell item={parent} idx={-1} k="q_siku" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AG2', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AG2')}>
-                      <EditableCell item={parent} idx={-1} k="q_screw" onUpdateRow={(idx, k, val) => onUpdateParent(k, val)} isRefMode={isRefMode} />
-                    </td>
-                    {(() => {
-                      const calc = parent.komp || parent.modul || parent.kabinet ? calcBreakdownItem(parent, items, spec, parent) : null;
+                    {EXTRA_COLUMNS.map((col, idx) => {
+                      const globalIdx = 30 + idx;
+                      if (!showCNC && globalIdx >= 44) return null;
+                      const colLetter = LETTERS[29 + idx]; // AD is at index 29 in LETTERS
+
+                      const handleMD = (e) => {
+                        if (isRefMode && !col.isCalc) e.preventDefault();
+                        handleCellClick(colLetter);
+                      };
+
+                      const isSel = selectedCoord === `${colLetter}${parentRowNumber}`;
+                      const isRef = refCoordsArr.includes(`${colLetter}${parentRowNumber}`);
+
+                      const center = !['comp_name', 'comp_desc', 'bhn_desc', 'csv_format', 'desc_lap', 'desc_edg', 'anodize'].includes(col.key);
+
+                      const cStyle = {
+                        ...s.td,
+                        textAlign: center ? 'center' : 'left',
+                        background: col.bg || parentBg,
+                        ...(isSel ? { outline: '2px solid #2563eb', outlineOffset: -2, zIndex: 10, position: 'relative' } : {}),
+                        ...(isRef && !isSel ? { outline: '2px dashed #10b981', outlineOffset: -2, background: '#ecfdf5', zIndex: 5, position: 'relative' } : {}),
+                      };
+
+                      if (col.key === 'x_sep' || col.key === 'x_sep2') {
+                        return <td key={col.key} style={cStyle}>x</td>;
+                      }
+
+                      if (col.isCalc) {
+                        const val = calc ? calc[col.key] : '';
+                        let formatted = '';
+                        if (['p_gross', 'l_gross', 'keliling', 'luas_gross', 'prop_harga'].includes(col.key)) {
+                          formatted = formatIndo2Digit(val, col.key);
+                        } else {
+                          formatted = typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(3)) : (val || '-');
+                        }
+                        return (
+                          <td key={col.key} style={cStyle} title={String(val || '')}>
+                            {formatted}
+                          </td>
+                        );
+                      }
+
                       return (
-                        <>
-                          {showCNC && <td style={cellStyle('AF', { background: '#f0fdf4', color: '#047857', fontWeight: 600, fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'AF')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.ukuran_cnc : '-'}
-                            </div>
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_P1', { background: '#dcfce7', color: '#166534', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_P1')}>
-                            {calc ? (calc.t_p1 > 0 ? calc.t_p1 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_P2', { background: '#dcfce7', color: '#166534', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_P2')}>
-                            {calc ? (calc.t_p2 > 0 ? calc.t_p2 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_L1', { background: '#fef9c3', color: '#854d0e', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_L1')}>
-                            {calc ? (calc.t_l1 > 0 ? calc.t_l1 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_L2', { background: '#fef9c3', color: '#854d0e', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_L2')}>
-                            {calc ? (calc.t_l2 > 0 ? calc.t_l2 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BN', { background: '#e0f2fe', color: '#075985', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BN')}>
-                            {calc && calc.area_panel ? calc.area_panel.toFixed(3) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BW', { background: '#e0f2fe', color: '#075985', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BW')}>
-                            {calc && calc.area_m2 ? calc.area_m2.toFixed(3) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BM', { background: '#ccfbf1', color: '#115e59', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BM')}>
-                            {calc && calc.keliling_panel ? calc.keliling_panel.toFixed(2) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('AG', { background: '#eff6ff', color: '#1e40af', fontWeight: 600, fontSize: 11, textAlign: 'left', padding: '2px 8px', whiteSpace: 'nowrap' })} onMouseDown={(e) => handleMD(e, 'AG')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.nama_komp : '-'}
-                            </div>
-                          </td>}
-                          {showCNC && <td style={cellStyle('AH', { background: '#f8fafc', color: '#64748b', fontSize: 10, textAlign: 'left', padding: '2px 8px', fontFamily: 'monospace', whiteSpace: 'nowrap' })} onMouseDown={(e) => handleMD(e, 'AH')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.csv_format : '-'}
-                            </div>
-                          </td>}
-                        </>
+                        <td key={col.key} style={cStyle} onMouseDown={handleMD}>
+                          {getCellRenderer(parent, -1, col.key, true)}
+                        </td>
                       );
-                    })()}
+                    })}
                     <td style={s.td}></td>
                   </tr>
                 );
               })()}
               {items.map((item, rowIdx) => {
                 const rowNumber = (item._idx !== undefined ? item._idx : rowIdx + rowOffset) + 1;
-                const handleCellClick = (col) => onCellClick && onCellClick(`${col}${rowNumber}`);
-                const isSel = (col) => selectedCoord === `${col}${rowNumber}`;
-                const isRef = (col) => refCoords.includes(`${col}${rowNumber}`);
-                const isSetUp = item.type === 'Set_up';
-                const centerCols = ['B', 'C', 'D', 'E', 'F', 'F2', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U2', 'V2', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF2', 'AG2', 'T_P1', 'T_P2', 'T_L1', 'T_L2', 'BN', 'BW', 'BM'];
-                const cellStyle = (col, extra = {}) => ({
-                   ...s.td,
-                   textAlign: centerCols.includes(col) ? 'center' : 'left',
-                   ...extra,
-                   ...(isSetUp ? { background: '#fefcbf' } : {}),
-                   ...(isSel(col) ? { outline: '2px solid #2563eb', outlineOffset: -2, zIndex: 10, position: 'relative' } : {}),
-                   ...(isRef(col) && !isSel(col) ? { outline: '2px dashed #10b981', outlineOffset: -2, background: '#ecfdf5', zIndex: 5, position: 'relative' } : {}),
-                });
-                const handleMD = (e, col) => {
-                  if (isRefMode && !isSel(col)) e.preventDefault();
-                  handleCellClick(col);
-                };
-
-                const currentType = item.type || '';
-                let componentOptions = [];
-                if (currentType === 'prt') componentOptions = parts.map(p => p.name);
-                else if (currentType === 'Set_up') componentOptions = setupItems.map(s => s.name);
-                else componentOptions = parts.map(p => p.name);
-
+                const rowNumStr = String(rowNumber);
+                const selectedCoordInRow = (selectedCoord && selectedCoord.match(/(\d+)$/)?.[1] === rowNumStr)
+                  ? selectedCoord : null;
+                const refCoordsStrForRow = refCoordsArr.length
+                  ? refCoordsArr.filter(c => c.match(/(\d+)$/)?.[1] === rowNumStr).join(',')
+                  : '';
                 return (
-                  <tr
-                    key={rowIdx}
-                    draggable
-                    onDragStart={e => { e.dataTransfer.setData('text/plain', rowIdx); e.currentTarget.style.opacity = '0.4'; }}
-                    onDragEnd={e => { e.currentTarget.style.opacity = '1'; }}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => {
-                      e.preventDefault();
-                      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-                      if (onReorder) onReorder(fromIdx, rowIdx);
-                    }}
-                    style={{ borderBottom: '1px solid #f3f4f6', cursor: 'grab', background: item.type === 'Set_up' ? '#fefcbf' : 'transparent' }}
-                  >
-                    <td style={cellStyle('A', { background: '#f8fafc', borderRight: '1px solid #e2e8f0', color: '#94a3b8', fontSize: 9, textAlign: 'center', fontWeight: 700 })} onMouseDown={(e) => handleMD(e, 'A')}>{rowNumber}</td>
-                    <td style={cellStyle('A', { fontSize: 10, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'A')}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                        <span style={{ cursor: 'grab', color: '#cbd5e1', fontSize: 12 }}>⋮⋮</span>
-                        <span style={{ color: '#666' }}>{rowNumber}</span>
-                      </div>
-                    </td>
-                    <td style={cellStyle('B')} onMouseDown={(e) => handleMD(e, 'B')}><EditableCell item={item} idx={rowIdx} k="cat" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td className="has-dropdown" style={cellStyle('C')} onMouseDown={(e) => handleMD(e, 'C')}><SearchableCell value={item.type} options={['prt', 'Set_up', 'kab', 'Ref', 'proses_khusus']} onSelect={v => onUpdateRow(rowIdx, 'type', v)} isRefMode={isRefMode} /></td>
-                    <td style={cellStyle('D')} onMouseDown={(e) => handleMD(e, 'D')}>
-                      {(() => {
-                        const smMatch = item.type === 'Set_up' ? setupItems.find(s => s.name?.trim() === item.komp?.trim()) : null;
-                        return <EditableCell item={item} idx={rowIdx} k="kode" valueOverride={smMatch?.ks} onUpdateRow={onUpdateRow} isRefMode={isRefMode} />;
-                      })()}
-                    </td>
-                    <td style={cellStyle('E')} onMouseDown={(e) => handleMD(e, 'E')}><EditableCell item={item} idx={rowIdx} k="tpk" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td style={cellStyle('F')} onMouseDown={(e) => handleMD(e, 'F')}>
-                      {(() => {
-                        const smMatch = item.type === 'Set_up' ? setupItems.find(s => s.name?.trim() === item.komp?.trim()) : null;
-                        return <EditableCell item={item} idx={rowIdx} k="no" valueOverride={smMatch?.no} onUpdateRow={onUpdateRow} isRefMode={isRefMode} />;
-                      })()}
-                    </td>
-                    <td style={cellStyle('F2')} onMouseDown={(e) => handleMD(e, 'F2')}><EditableCell item={item} idx={rowIdx} k="opt" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td className="has-dropdown" style={cellStyle('G')} onMouseDown={(e) => handleMD(e, 'G')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                        {item.type === 'Set_up' && <Badge color="indigo">SUB</Badge>}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                           <SearchableCell
-                            value={item.komp}
-                            options={componentOptions}
-                            onSelect={v => {
-                              const cleanV = v?.trim();
-                              const updates = { komp: cleanV };
-                              const partMatch = parts.find(p => p.name?.trim() === cleanV);
-                              if (partMatch) {
-                                // Helper: resolve "=varname" dari partsData ke nilai spek aktif
-                                if (partMatch.val) {
-                                  updates.bid = partMatch.val;
-                                  updates.no = partMatch.val;
-                                }
-                                if (partMatch.bhn) updates.bhn = partMatch.bhn;
-                                if (partMatch.t !== undefined) updates.t_bhn = partMatch.t;
-                                if (partMatch.code) updates.cat = partMatch.code;
-                                if (partMatch.ks) updates.kode = partMatch.ks;
-
-                                // Lapisan & Edging IDs
-                                if (partMatch.l !== undefined) updates.l_fin = partMatch.l;
-                                if (partMatch.d !== undefined) updates.d_fin = partMatch.d;
-                                if (partMatch.p1 !== undefined) updates.p1 = partMatch.p1;
-                                if (partMatch.p2 !== undefined) updates.p2 = partMatch.p2;
-                                if (partMatch.l1 !== undefined) updates.l1 = partMatch.l1;
-                                if (partMatch.l2 !== undefined) updates.l2 = partMatch.l2;
-
-                                // Lapisan & Edging Names
-                                if (partMatch.lap_luar !== undefined) updates.lap_luar = partMatch.lap_luar;
-                                if (partMatch.lap_dalam !== undefined) updates.lap_dalam = partMatch.lap_dalam;
-                                if (partMatch.edg_p1 !== undefined) updates.edg_p1 = partMatch.edg_p1;
-                                if (partMatch.edg_p2 !== undefined) updates.edg_p2 = partMatch.edg_p2;
-                                if (partMatch.edg_l1 !== undefined) updates.edg_l1 = partMatch.edg_l1;
-                                if (partMatch.edg_l2 !== undefined) updates.edg_l2 = partMatch.edg_l2;
-
-                                // Hardware Counts
-                                if (partMatch.q_engsel !== undefined) updates.q_engsel = partMatch.q_engsel;
-                                if (partMatch.q_rel !== undefined) updates.q_rel = partMatch.q_rel;
-                                if (partMatch.q_dormec !== undefined) updates.q_dormec = partMatch.q_dormec;
-                                if (partMatch.q_minifix !== undefined) updates.q_minifix = partMatch.q_minifix;
-                                if (partMatch.q_dowel !== undefined) updates.q_dowel = partMatch.q_dowel;
-
-                              } else {
-                                const smatch = setupItems.find(s => s.name?.trim() === cleanV);
-                                if (smatch) {
-                                  if (smatch.ks) updates.kode = smatch.ks;
-                                  if (smatch.no && smatch.no !== '•' && smatch.no !== '-') updates.no = smatch.no;
-                                }
-                              }
-                              onUpdateRow(rowIdx, updates);
-                            }}
-                            fontWeight={item.type === 'Set_up' ? 700 : 600}
-                            isRefMode={isRefMode}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td style={cellStyle('H')} onMouseDown={(e) => handleMD(e, 'H')}>{getCellRenderer(item, rowIdx, 'p')}</td>
-                    <td style={cellStyle('I')} onMouseDown={(e) => handleMD(e, 'I')}>{getCellRenderer(item, rowIdx, 'l')}</td>
-                    <td style={cellStyle('J')} onMouseDown={(e) => handleMD(e, 'J')}>{getCellRenderer(item, rowIdx, 't')}</td>
-                    <td style={cellStyle('K')} onMouseDown={(e) => handleMD(e, 'K')}><EditableCell item={item} idx={rowIdx} k="sub" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td style={cellStyle('L')} onMouseDown={(e) => handleMD(e, 'L')}><EditableCell item={item} idx={rowIdx} k="jml" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td className="has-dropdown" style={cellStyle('M', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'M')}>
-                      <SearchableCell
-                        value={item.bhn || ''}
-                        options={bhnOptions.length ? bhnOptions : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC']}
-                        onSelect={v => onUpdateRow(rowIdx, 'bhn', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td style={cellStyle('N', { background: '#e0f2fe' })} onMouseDown={(e) => handleMD(e, 'N')}>
-                      <EditableCell item={item} idx={rowIdx} k="t_bhn" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('O', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'O')}>{getCellRenderer(item, rowIdx, 'l_fin')}</td>
-                    <td style={cellStyle('P', { background: '#fffbeb' })} onMouseDown={(e) => handleMD(e, 'P')}>{getCellRenderer(item, rowIdx, 'd_fin')}</td>
-                    <td style={cellStyle('Q', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'Q')}>{getCellRenderer(item, rowIdx, 'p1')}</td>
-                    <td style={cellStyle('R', { background: '#f0fdf4' })} onMouseDown={(e) => handleMD(e, 'R')}>{getCellRenderer(item, rowIdx, 'p2')}</td>
-                    <td style={cellStyle('S', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'S')}>{getCellRenderer(item, rowIdx, 'l1')}</td>
-                    <td style={cellStyle('T', { background: '#fff7ed' })} onMouseDown={(e) => handleMD(e, 'T')}>{getCellRenderer(item, rowIdx, 'l2')}</td>
-                    <td className="has-dropdown" style={cellStyle('U', { background: '#dbeafe' })} onMouseDown={(e) => handleMD(e, 'U')}>
-                      <SearchableCell
-                        value={item.lap_luar || ''}
-                        options={hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos']}
-                        onSelect={v => onUpdateRow(rowIdx, 'lap_luar', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td style={cellStyle('U2', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'U2')}><EditableCell item={item} idx={rowIdx} k="t_luar" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td className="has-dropdown" style={cellStyle('V', { background: '#ede9fe' })} onMouseDown={(e) => handleMD(e, 'V')}>
-                      <SearchableCell
-                        value={item.lap_dalam || ''}
-                        options={['', ...(hplOptions.length ? hplOptions : ['HB_41130', 'Aica', 'DSK_5450_SM', 'Polos'])]}
-                        onSelect={v => onUpdateRow(rowIdx, 'lap_dalam', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td style={cellStyle('V2', { background: '#f3e8ff' })} onMouseDown={(e) => handleMD(e, 'V2')}><EditableCell item={item} idx={rowIdx} k="t_dalam" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td className="has-dropdown" style={cellStyle('W', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'W')}>
-                      <SearchableCell
-                         value={item.edg_p1 || ''}
-                        options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-                        onSelect={v => onUpdateRow(rowIdx, 'edg_p1', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('X', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'X')}>
-                      <SearchableCell
-                        value={item.edg_p2 || ''}
-                        options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-                        onSelect={v => onUpdateRow(rowIdx, 'edg_p2', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('Y', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'Y')}>
-                      <SearchableCell
-                        value={item.edg_l1 || ''}
-                        options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-                        onSelect={v => onUpdateRow(rowIdx, 'edg_l1', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td className="has-dropdown" style={cellStyle('Z', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'Z')}>
-                      <SearchableCell
-                        value={item.edg_l2 || ''}
-                        options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-                        onSelect={v => onUpdateRow(rowIdx, 'edg_l2', v)}
-                        isRefMode={isRefMode}
-                      />
-                    </td>
-                    <td style={cellStyle('AA', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AA')}>
-                      <EditableCell item={item} idx={rowIdx} k="q_engsel" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AB', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AB')}>
-                      <EditableCell item={item} idx={rowIdx} k="q_rel" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AC', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AC')}>
-                      <EditableCell item={item} idx={rowIdx} k="q_dormec" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AD', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AD')}>
-                      <EditableCell item={item} idx={rowIdx} k="q_minifix" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AE', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AE')}>
-                      <EditableCell item={item} idx={rowIdx} k="q_dowel" onUpdateRow={onUpdateRow} isRefMode={isRefMode} />
-                    </td>
-                    <td style={cellStyle('AF2', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AF2')}><EditableCell item={item} idx={rowIdx} k="q_siku" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    <td style={cellStyle('AG2', { background: '#fce7f3' })} onMouseDown={(e) => handleMD(e, 'AG2')}><EditableCell item={item} idx={rowIdx} k="q_screw" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
-                    {(() => {
-                      const calc = item.komp ? calcBreakdownItem(item, items, spec, parent) : null;
-                      return (
-                        <>
-                          {showCNC && <td style={cellStyle('AF', { background: '#f0fdf4', color: '#047857', fontWeight: 600, fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'AF')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.ukuran_cnc : '-'}
-                            </div>
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_P1', { background: '#dcfce7', color: '#166534', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_P1')}>
-                            {calc ? (calc.t_p1 > 0 ? calc.t_p1 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_P2', { background: '#dcfce7', color: '#166534', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_P2')}>
-                            {calc ? (calc.t_p2 > 0 ? calc.t_p2 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_L1', { background: '#fef9c3', color: '#854d0e', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_L1')}>
-                            {calc ? (calc.t_l1 > 0 ? calc.t_l1 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('T_L2', { background: '#fef9c3', color: '#854d0e', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'T_L2')}>
-                            {calc ? (calc.t_l2 > 0 ? calc.t_l2 : '-') : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BN', { background: '#e0f2fe', color: '#075985', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BN')}>
-                            {calc && calc.area_panel ? calc.area_panel.toFixed(3) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BW', { background: '#e0f2fe', color: '#075985', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BW')}>
-                            {calc && calc.area_m2 ? calc.area_m2.toFixed(3) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('BM', { background: '#ccfbf1', color: '#115e59', fontSize: 11, textAlign: 'center' })} onMouseDown={(e) => handleMD(e, 'BM')}>
-                            {calc && calc.keliling_panel ? calc.keliling_panel.toFixed(2) : '-'}
-                          </td>}
-                          {showCNC && <td style={cellStyle('AG', { background: '#eff6ff', color: '#1e40af', fontWeight: 600, fontSize: 11, textAlign: 'left', padding: '2px 8px', whiteSpace: 'nowrap' })} onMouseDown={(e) => handleMD(e, 'AG')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.nama_komp : '-'}
-                            </div>
-                          </td>}
-                          {showCNC && <td style={cellStyle('AH', { background: '#f8fafc', color: '#64748b', fontSize: 10, textAlign: 'left', padding: '2px 8px', fontFamily: 'monospace', whiteSpace: 'nowrap' })} onMouseDown={(e) => handleMD(e, 'AH')}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {calc ? calc.csv_format : '-'}
-                            </div>
-                          </td>}
-                        </>
-                      );
-                    })()}
-                    <td style={s.td}><button style={{ ...s.iconBtn, color: '#fca5a5' }} onClick={() => onDeleteRow(rowIdx)}>✕</button></td>
-                  </tr>
+                  <SharedModuleTableRow
+                    key={item.id || rowIdx}
+                    item={item}
+                    items={items}
+                    rowsWithParent={rowsWithParent}
+                    rowIdx={rowIdx}
+                    rowOffset={rowOffset}
+                    isRefMode={isRefMode}
+                    selectedCoordInRow={selectedCoordInRow}
+                    refCoordsStr={refCoordsStrForRow}
+                    parts={parts}
+                    setupItems={setupItems}
+                    spec={spec}
+                    parent={parent}
+                    showCNC={showCNC}
+                    hplOptions={hplOptions}
+                    edgOptions={edgOptions}
+                    bhnOptions={bhnOptions}
+                    onUpdateRow={onUpdateRow}
+                    onDeleteRow={onDeleteRow}
+                    onReorder={onReorder}
+                    onCellClick={onCellClick}
+                    getCellRenderer={getCellRenderer}
+                    specAliases={specAliases}
+                    calcResult={calcResults[rowIdx]}
+                  />
                 );
               })}
+
+
             </tbody>
           </table>
         );
@@ -1022,24 +1373,24 @@ export default function SharedModuleTable({
               );
               return (
                 <>
-                  {renderParentCell('p', 'H')}
-                  {renderParentCell('l', 'I')}
-                  {renderParentCell('t', 'J')}
+                  {renderParentCell('p', 'I')}
+                  {renderParentCell('l', 'J')}
+                  {renderParentCell('t', 'K')}
                   <div style={{ marginLeft: 8, display: 'flex' }}>
-                    {renderParentCell('sub', 'K')}
-                    {renderParentCell('jml', 'L')}
+                    {renderParentCell('sub', 'L')}
+                    {renderParentCell('jml', 'M')}
                   </div>
                   <div style={{ marginLeft: 8, display: 'flex', gap: 2, background: '#fffbeb', borderRadius: 4, padding: '0 4px' }}>
-                    {renderParentCell('l_fin', 'O')}
-                    {renderParentCell('d_fin', 'P')}
+                    {renderParentCell('l_fin', 'P')}
+                    {renderParentCell('d_fin', 'Q')}
                   </div>
                   <div style={{ marginLeft: 4, display: 'flex', gap: 2, background: '#f0fdf4', borderRadius: 4, padding: '0 4px' }}>
-                    {renderParentCell('p1', 'Q')}
-                    {renderParentCell('p2', 'R')}
+                    {renderParentCell('p1', 'R')}
+                    {renderParentCell('p2', 'S')}
                   </div>
                   <div style={{ marginLeft: 4, display: 'flex', gap: 2, background: '#fff7ed', borderRadius: 4, padding: '0 4px' }}>
-                    {renderParentCell('l1', 'S')}
-                    {renderParentCell('l2', 'T')}
+                    {renderParentCell('l1', 'T')}
+                    {renderParentCell('l2', 'U')}
                   </div>
                 </>
               );
@@ -1055,3 +1406,51 @@ export default function SharedModuleTable({
     </div>
   );
 }
+
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function objectsEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const k of keysA) {
+    if (a[k] !== b[k]) return false;
+  }
+  return true;
+}
+
+const MemoizedSharedModuleTable = React.memo(SharedModuleTable, (prevProps, nextProps) => {
+  return (
+    arraysEqual(prevProps.items, nextProps.items) &&
+    objectsEqual(prevProps.parent, nextProps.parent) &&
+    prevProps.selectedCoord === nextProps.selectedCoord &&
+    prevProps.refCoordsStr === nextProps.refCoordsStr &&
+    prevProps.isRefMode === nextProps.isRefMode &&
+    prevProps.showCNC === nextProps.showCNC &&
+    prevProps.sectionType === nextProps.sectionType &&
+    prevProps.spec === nextProps.spec &&
+    prevProps.parts === nextProps.parts &&
+    prevProps.setupItems === nextProps.setupItems &&
+    prevProps.hplOptions === nextProps.hplOptions &&
+    prevProps.edgOptions === nextProps.edgOptions &&
+    prevProps.bhnOptions === nextProps.bhnOptions &&
+    prevProps.moduls === nextProps.moduls &&
+    prevProps.badgeText === nextProps.badgeText &&
+    prevProps.badgeColor === nextProps.badgeColor &&
+    prevProps.badgeBg === nextProps.badgeBg &&
+    prevProps.hideHeaderRow === nextProps.hideHeaderRow &&
+    prevProps.hideCardFrame === nextProps.hideCardFrame
+  );
+});
+
+export default MemoizedSharedModuleTable;

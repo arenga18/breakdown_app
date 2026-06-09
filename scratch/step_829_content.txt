@@ -1,0 +1,48 @@
+Created At: 2026-06-09T08:45:59Z
+Completed At: 2026-06-09T08:46:01Z
+
+				The command completed successfully.
+				Output:
+				<truncated 680 lines>
+[47615195 step=7062] replace_file_content src/components/SharedModuleTable.js
+[47615195 step=7100] multi_replace_file_content src/App.js (0 chunks)
+Error: Target content not found in file: "export function shiftTemplateFormulas(komponenItems, shiftAmount) {\\n  if (shiftAmount === 0 || !komponenItems) return
+[47615195 step=7146] replace_file_content src/utils/calc.js
+[47615195 step=7152] multi_replace_file_content src/components/BreakdownPage.js (0 chunks)
+Error: Target content not found in file: "import SetupItemPage from './components/SetupItemPage';\\nimport { parseHashRoute, buildHashRoute } from './utils/route
+[47615195 step=7265] replace_file_content src/App.js
+Error: Target content not found in file: '    fetchDBData();\\n  }, []);'
+[47615195 step=7269] replace_file_content src/App.js
+Error: Target content not found in file: "        {/* Configuration Dropdown */}\\n        <div style={{ position: 'relative' }}>\\n          <button\\n         
+[47615195 step=7273] replace_file_content src/App.js
+Error: Target content not found in file: "        {route.page === 'setup' && <SetupItemPage data={state.setupItems} onChange={update('setupItems')} />}\\n      <
+[47615195 step=7277] replace_file_content src/App.js
+Warning: multiple occurrences of target content found, replacing all.
+[47615195 step=7479] replace_file_content src/utils/resolveAlias.js
+Error: Target content not found in file: "import React, { useState, useMemo, useEffect } from 'react';\\nimport { s, Badge } from './UI';\\nimport { calcBreakdow
+[47615195 step=7521] replace_file_content src/components/ReportPage.js
+Error: Target content not found in file: "export default function ReportPage({ breakdown = [], parts = [], stock = [], spec = {}, sections = [] }) {\\n  const [a
+[47615195 step=7525] replace_file_content src/components/ReportPage.js
+Error: Target content not found in file: '      <div className=\
+<truncated 4175 bytes>
+^([A-Z]+)(\\\\d+)$/);\\n    if (!match) return;\\n
+[3bcd4aac step=773] replace_file_content src/components/BreakdownPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SharedModuleTable.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SpekPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/TemplatePage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/utils/resolveAlias.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/BreakdownPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/utils/calc.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ModuleEditor.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/PartPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SubModulTemplatePage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ModulTemplatePage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/App.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ModulPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ProjectPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/CategoryPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/RekapPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/StockPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/SubModulPage.js
+Wrote recovered file: /Applications/Arenga/vscode/breakdown_app/recovered_src/src/components/ReportPage.js
+

@@ -1,8 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { s, Badge, Modal } from './UI';
-import { evaluateFormula, shiftTemplateFormulas } from '../utils/calc';
+import { evaluateFormula, shiftTemplateFormulas, adjustFormulasOnShift } from '../utils/calc';
+import { buildNamedRanges } from '../utils/buildNamedRanges';
+import { COL_MAP, getColLetter } from '../utils/colMap';
 import ModuleEditor from './ModuleEditor';
 import { FormulaInput } from './SharedModuleTable';
+import { resolveLapisanFromCode, getFinishingThickness, isFinishingEmpty } from '../utils/breakdownCalc';
+import { resolveAlias, buildAliasMap } from '../utils/resolveAlias';
+import VariablesPanel from './VariablesPanel';
 
 function FormulaBar({ selectedCoord, value, onChange, onApply, onCancel }) {
   return (
@@ -32,7 +37,8 @@ function FormulaBar({ selectedCoord, value, onChange, onApply, onCancel }) {
         fx
       </div>
       <input
-        style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: '100%', color: value?.toString().startsWith('=') ? '#2563eb' : '#111', fontWeight: value?.toString().startsWith('=') ? 600 : 400 }}
+        style={{ flex: 1, height: '100%', padding: '0 12px', border: 'none', outline: 'none', fontSize: 13, fontFamily: 'monospace' }}
+        disabled={!selectedCoord}
         value={value || ''}
         onChange={e => onChange(e.target.value)}
         placeholder={selectedCoord ? "Masukkan rumus atau nilai..." : ""}
@@ -64,7 +70,7 @@ const emptyRow = {
   isParent: false
 };
 
-export default function BreakdownPage({ data, parts, moduls = [], subModuls = [], spec = {}, sections = [], setupItems = [], categories = [], onChange }) {
+export default function BreakdownPage({ data, parts, moduls = [], subModuls = [], spec = {}, sections = [], setupItems = [], categories = [], onChange, onVariableClick }) {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [modulSearchQuery, setModulSearchQuery] = useState('');
@@ -73,25 +79,59 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
   const [selectedCoord, setSelectedCoord] = useState(null);
   const [formulaBarValue, setFormulaBarValue] = useState('');
   const [selectedCell, setSelectedCell] = useState(null); // { itemIdx, key }
+  const originalValueRef = useRef('');
 
-  // Derive dropdown options from categories
+  // Refs to make callbacks stable and prevent stale closure issues
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const activeInputRef = useRef(activeInput);
+  activeInputRef.current = activeInput;
+
+  const selectedCoordRef = useRef(selectedCoord);
+  selectedCoordRef.current = selectedCoord;
+
+  const formulaBarValueRef = useRef(formulaBarValue);
+  formulaBarValueRef.current = formulaBarValue;
+
+  const selectedCellRef = useRef(selectedCell);
+  selectedCellRef.current = selectedCell;
+
+  // Derive dropdown options from stock data filtered by kat
+  const stockData = spec.stock || [];
   const hplOptions = useMemo(() => {
+    const hplStock = stockData.filter(s => (s.kat || '').toLowerCase() === 'hpl');
+    if (hplStock.length > 0) return hplStock.map(s => s.nama || s.kode || '');
+    // fallback to categories if no stock found
     const catLuar = categories.find(c => c.code === 'lap_luar');
     const catDalam = categories.find(c => c.code === 'lap_dalam');
     const luarItems = catLuar ? catLuar.items : ['HB_41130', 'Aica', 'DSK_5450_SM', 'SK_10455_UW', 'GM_86', 'DXP_5342_XM', 'Duco', 'Polos'];
     const dalamItems = catDalam ? catDalam.items : ['HB_41130', 'Aica', 'Melanor', 'Polos'];
-    return [...new Set([...luarItems, ...dalamItems])];
-  }, [categories]);
+    const luarNames = luarItems.map(x => typeof x === 'string' ? x : x.name || '');
+    const dalamNames = dalamItems.map(x => typeof x === 'string' ? x : x.name || '');
+    return [...new Set([...luarNames, ...dalamNames])];
+  }, [stockData, categories]);
 
   const edgOptions = useMemo(() => {
+    const edgStock = stockData.filter(s => (s.kat || '').toLowerCase() === 'edg');
+    if (edgStock.length > 0) return edgStock.map(s => s.nama || s.kode || '');
+    // fallback to categories if no stock found
     const cat = categories.find(c => c.code === 'edg');
-    return cat ? cat.items : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Edg u/ SK_10455_UW', 'Melanor'];
-  }, [categories]);
+    const items = cat ? cat.items : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'];
+    return items.map(x => typeof x === 'string' ? x : x.name || '');
+  }, [stockData, categories]);
 
   const bhnOptions = useMemo(() => {
     const cat = categories.find(c => c.code === 'bhn');
-    return cat ? cat.items : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC'];
+    const items = cat ? cat.items : ['Ply', 'Ply+mdf hijau 1mk', 'Mdf hijau', 'UPVC'];
+    return items.map(x => typeof x === 'string' ? x : x.name || '');
   }, [categories]);
+
+  // Build named ranges (defined names) from categories for formula evaluation
+  const namedRanges = useMemo(() => buildNamedRanges(categories), [categories]);
+
+  // Pre-build alias map once per spec change
+  const specAliases = useMemo(() => buildAliasMap(spec), [spec]);
 
   // Extract referenced coords from active formula for visual indicators
   const refCoords = useMemo(() => {
@@ -100,7 +140,11 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
     return matches || [];
   }, [activeInput]);
 
-  const handleCellClick = (coord) => {
+  const handleCellClick = useCallback((coord) => {
+    const formulaBarValue = formulaBarValueRef.current;
+    const selectedCoord = selectedCoordRef.current;
+    const activeInput = activeInputRef.current;
+
     // Reference insertion logic
     const isFormulaBarEditing = formulaBarValue?.toString().startsWith('=');
     if (isFormulaBarEditing && selectedCoord && selectedCoord !== coord) {
@@ -122,43 +166,45 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
     if (!match) return;
     const colLetter = match[1];
     const rowNum = parseInt(match[2]);
-    const itemIdx = rowNum - 1;
-    const item = data[itemIdx];
+    const itemIdx = rowNum - 2;
+    const item = dataRef.current[itemIdx];
 
     if (item) {
-      const keyMap = {
-        B: 'cat', C: 'type', D: 'kode', E: 'tpk', F: 'no', G: 'komp',
-        H: 'p', I: 'l', J: 't', K: 'sub', L: 'jml',
-        M: 'bhn', N: 't_bhn', O: 'l_fin', P: 'd_fin',
-        Q: 'p1', R: 'p2', S: 'l1', T: 'l2',
-        U: 'lap_luar', V: 'lap_dalam',
-        W: 'edg_p1', X: 'edg_p2', Y: 'edg_l1', Z: 'edg_l2',
-        AA: 'q_engsel', AB: 'q_rel', AC: 'q_dormec', AD: 'q_minifix', AE: 'q_dowel'
-      };
-      const key = keyMap[colLetter];
+      const key = COL_MAP[colLetter];
       if (key) {
         setSelectedCell({ itemIdx, key });
-        setFormulaBarValue(item[key] !== undefined && item[key] !== null ? item[key] : '');
+        const val = item[key] !== undefined && item[key] !== null ? item[key] : '';
+        setFormulaBarValue(val);
+        originalValueRef.current = val;
       } else {
         setSelectedCell(null);
         setFormulaBarValue('');
+        originalValueRef.current = '';
       }
     }
-  };
+  }, []);
 
-  const handleFormulaBarApply = () => {
+  const handleFormulaBarApply = useCallback(() => {
+    const selectedCell = selectedCellRef.current;
     if (!selectedCell) return;
     const { itemIdx, key } = selectedCell;
-    const next = [...data];
-    next[itemIdx] = { ...next[itemIdx], [key]: formulaBarValue };
+    const next = [...dataRef.current];
+    next[itemIdx] = { ...next[itemIdx], [key]: formulaBarValueRef.current };
     onChange(next);
-  };
+    originalValueRef.current = formulaBarValueRef.current;
+    setActiveInput(null);
+  }, [onChange]);
 
-  const handleFormulaBarCancel = () => {
+  const handleFormulaBarCancel = useCallback(() => {
+    const selectedCell = selectedCellRef.current;
     if (!selectedCell) return;
-    const item = data[selectedCell.itemIdx];
-    setFormulaBarValue(item ? item[selectedCell.key] || '' : '');
-  };
+    const { itemIdx, key } = selectedCell;
+    const next = [...dataRef.current];
+    next[itemIdx] = { ...next[itemIdx], [key]: originalValueRef.current };
+    onChange(next);
+    setFormulaBarValue(originalValueRef.current);
+    setActiveInput(null);
+  }, [onChange]);
 
   const groupedData = useMemo(() => {
     const groups = [];
@@ -168,7 +214,19 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
         if (currentGroup) groups.push(currentGroup);
         currentGroup = { parent: { ...item, _idx: originalIndex }, items: [], sectionType: item.sectionType || 'module' };
       } else {
-        if (!currentGroup) currentGroup = { parent: null, items: [], sectionType: 'module' };
+        if (!currentGroup) {
+          // Dynamic self-healing: synthesize a parent row so the app doesn't crash on load
+          const synthesizedParent = {
+            isParent: true,
+            modul: item.modul || 'Custom Modul',
+            komp: item.modul || 'Custom Modul',
+            sectionType: 'module',
+            p: 0, l: 0, t: 0, jml: 1, sub: 1,
+            _idx: originalIndex,
+            _synthesized: true
+          };
+          currentGroup = { parent: synthesizedParent, items: [], sectionType: 'module' };
+        }
         // Untuk lepasan: parent row tidak ditampilkan di tabel,
         // jadi kurangi _idx sebesar 1 supaya penomoran row tetap kontinyu
         const idxOffset = currentGroup.sectionType === 'lepasan' ? 1 : 0;
@@ -179,16 +237,49 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
     return groups;
   }, [data]);
 
-  const filteredModuls = moduls.filter(m =>
-    m.kabinet.toLowerCase().includes(modulSearchQuery.toLowerCase()) ||
-    (m.produk || '').toLowerCase().includes(modulSearchQuery.toLowerCase())
-  );
+  // Compute selected coordinate and ref coords per group to prevent cascading re-renders
+  const groupCoords = useMemo(() => {
+    return groupedData.map(group => {
+      const groupRowNumbers = new Set();
+      if (group.parent && group.parent._idx !== undefined) {
+        groupRowNumbers.add(String(group.parent._idx + 1));
+      }
+      group.items.forEach(item => {
+        if (item._idx !== undefined) {
+          groupRowNumbers.add(String(item._idx + 1));
+        }
+      });
 
-  function handleModuleChange(groupIndex, newHeader, newItems) {
-    const next = [...data];
+      const selectedRowMatch = selectedCoord ? selectedCoord.match(/(\d+)$/) : null;
+      const selectedRowNum = selectedRowMatch ? selectedRowMatch[1] : null;
+      const selectedCoordForGroup = (selectedRowNum && groupRowNumbers.has(selectedRowNum)) ? selectedCoord : null;
+
+      const refCoordsForGroupStr = refCoords
+        .filter(c => {
+          const match = c.match(/(\d+)$/);
+          return match && groupRowNumbers.has(match[1]);
+        })
+        .join(',');
+
+      return {
+        selectedCoord: selectedCoordForGroup,
+        refCoordsStr: refCoordsForGroupStr
+      };
+    });
+  }, [groupedData, selectedCoord, refCoords]);
+
+  const filteredModuls = useMemo(() => {
+    return moduls.filter(m =>
+      (m.kabinet || '').toLowerCase().includes(modulSearchQuery.toLowerCase()) ||
+      (m.produk || '').toLowerCase().includes(modulSearchQuery.toLowerCase())
+    );
+  }, [moduls, modulSearchQuery]);
+
+  const handleModuleChange = useCallback((newHeader, newItems) => {
+    const next = [...dataRef.current];
     const startIdx = newHeader._idx;
     let endIdx = startIdx + 1;
-    while (endIdx < data.length && !data[endIdx].isParent) endIdx++;
+    while (endIdx < dataRef.current.length && !dataRef.current[endIdx].isParent) endIdx++;
 
     // Completely replace the section to accurately reflect reorders and length changes
     const updatedParent = { ...newHeader, isParent: true };
@@ -199,9 +290,19 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
       return item;
     })];
 
-    next.splice(startIdx, endIdx - startIdx, ...updatedSection);
-    onChange(next);
-  }
+    const oldLength = endIdx - startIdx;
+    const newLength = updatedSection.length;
+    const shiftAmount = newLength - oldLength;
+
+    next.splice(startIdx, oldLength, ...updatedSection);
+
+    let adjusted = next;
+    if (shiftAmount !== 0) {
+      // Shift references to all rows at or after startIdx + 1 (i.e. child rows and subsequent modules)
+      adjusted = adjustFormulasOnShift(next, startIdx + 1, shiftAmount);
+    }
+    onChange(adjusted);
+  }, [onChange]);
 
   function loadModulTemplate(target) {
     let next = [...data];
@@ -254,41 +355,23 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
     onChange([...data, { ...emptyRow, isParent }]);
   }
 
-  function delModule(parentIdx) {
-    let end = parentIdx + 1;
-    while (end < data.length && !data[end].isParent) end++;
-    const next = [...data]; next.splice(parentIdx, end - parentIdx);
-    onChange(next);
-  }
-
-  const specVariables = useMemo(() => {
-    const vars = [{ key: 'P', val: '' }, { key: 'L', val: '' }, { key: 'T', val: '' }];
-    const sVals = spec.vals || {};
-    const sAliases = spec.aliases || {};
-
-    // First, populate all variables strictly defined in the template sections
-    const definedKeys = new Set();
-    sections.forEach(sec => {
-      sec.rows.forEach(row => {
-        const k = sec.name + '||' + row.label;
-        definedKeys.add(k);
-        vars.push({ key: sAliases[k] || row.alias || row.label.toUpperCase().replace(/\s+/g, '_'), val: sVals[k] || '' });
-      });
-    });
-
-    // Then, append any standalone variables stored in vals that aren't from current sections (e.g., legacy or dynamically added)
-    Object.keys(sVals).forEach(k => {
-      if (!definedKeys.has(k)) {
-        const label = k.split('||').pop();
-        vars.push({ key: sAliases[k] || label.toUpperCase().replace(/\s+/g, '_'), val: sVals[k] });
-      }
-    });
-
-    return vars;
-  }, [spec, sections]);
+  const delModule = useCallback((parentIdx) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus modul ini beserta seluruh komponen di dalamnya?")) {
+      let end = parentIdx + 1;
+      while (end < dataRef.current.length && !dataRef.current[end].isParent) end++;
+      const deleteCount = end - parentIdx;
+      
+      let next = [...dataRef.current];
+      next.splice(parentIdx, deleteCount);
+      
+      // Shift references to all rows at or after parentIdx up by deleteCount
+      const adjusted = adjustFormulasOnShift(next, parentIdx, -deleteCount);
+      onChange(adjusted);
+    }
+  }, [onChange]);
 
   return (
-    <div style={{ ...s.page, padding: 0, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ padding: '12px 20px', background: '#fff', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Breakdown Project</h2>
@@ -315,104 +398,103 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 150px 20px', background: '#f9fafb' }} onClick={() => setSelectedCoord(null)}>
-          {groupedData.map((group, gi) => (
-            <div key={gi} style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-              <ModuleEditor
-                header={group.parent}
-                items={group.items}
-                parts={parts}
-                setupItems={setupItems}
-                moduls={moduls}
-                subModuls={subModuls}
-                hplOptions={hplOptions}
-                edgOptions={edgOptions}
-                bhnOptions={bhnOptions}
-                sectionType={group.parent?.sectionType || 'module'}
-                badgeText={
-                  group.parent?.sectionType === 'submodule' ? 'SUB MODULE'
-                    : group.parent?.sectionType === 'lepasan' ? 'PART LEPASAN'
-                      : 'MODULE'
-                }
-                badgeColor={
-                  group.parent?.sectionType === 'submodule' ? '#7c3aed'
-                    : group.parent?.sectionType === 'lepasan' ? '#059669'
-                      : '#2563eb'
-                }
-                badgeBg={
-                  group.parent?.sectionType === 'submodule' ? '#f5f3ff'
-                    : group.parent?.sectionType === 'lepasan' ? '#ecfdf5'
-                      : '#eff6ff'
-                }
-                onCellClick={handleCellClick}
-                isRefMode={activeInput && activeInput.value?.toString().startsWith('=')}
-                selectedCoord={selectedCoord}
-                refCoords={refCoords}
-                onDeleteModule={() => delModule(group.parent._idx)}
-                onChange={(h, i) => handleModuleChange(gi, h, i)}
-                renderCustomCell={(item, idx, key) => {
-                  const rowNum = (item._idx !== undefined ? item._idx : idx) + 1;
-                  const getColLetter = (k) => {
-                    if (k === 'cat') return 'B';
-                    if (k === 'type') return 'C';
-                    if (k === 'kode') return 'D';
-                    if (k === 'tpk') return 'E';
-                    if (k === 'no') return 'F';
-                    if (k === 'komp') return 'G';
-                    if (k === 'p') return 'H';
-                    if (k === 'l') return 'I';
-                    if (k === 't') return 'J';
-                    if (k === 'sub') return 'K';
-                    if (k === 'jml') return 'L';
-                    if (k === 'bhn') return 'M';
-                    if (k === 't_bhn') return 'N';
-                    if (k === 'l_fin') return 'O';
-                    if (k === 'd_fin') return 'P';
-                    if (k === 'p1') return 'Q';
-                    if (k === 'p2') return 'R';
-                    if (k === 'l1') return 'S';
-                    if (k === 'l2') return 'T';
-                    if (k === 'lap_luar') return 'U';
-                    if (k === 'lap_dalam') return 'V';
-                    if (k === 'edg_p1') return 'W';
-                    if (k === 'edg_p2') return 'X';
-                    if (k === 'edg_l1') return 'Y';
-                    if (k === 'edg_l2') return 'Z';
-                    if (k === 'q_engsel') return 'AA';
-                    if (k === 'q_rel') return 'AB';
-                    if (k === 'q_dormec') return 'AC';
-                    if (k === 'q_minifix') return 'AD';
-                    if (k === 'q_dowel') return 'AE';
-                    return k.toUpperCase();
-                  };
-                  const colLetter = getColLetter(key);
-                  const cellCoord = `${colLetter}${rowNum}`;
-                  const centerCols = ['B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'AA', 'AB', 'AC', 'AD', 'AE'];
-                  const textAlign = centerCols.includes(colLetter) ? 'center' : 'right';
-                  return (
-                    <FormulaInput
-                      value={item[key]}
-                      textAlign={textAlign}
-                      evaluated={evaluateFormula(item[key], data, spec, group.parent)}
-                      onFocus={(setter) => setActiveInput({ value: item[key], setter, coord: cellCoord })}
-                      onBlur={() => setActiveInput(null)}
-                      onChange={v => {
-                        if (item.isParent) {
-                          handleModuleChange(gi, { ...item, [key]: v }, group.items);
-                        } else {
-                          const nextItems = [...group.items];
-                          const localIdx = idx;
-                          nextItems[localIdx] = { ...nextItems[localIdx], [key]: v };
-                          handleModuleChange(gi, group.parent, nextItems);
+          {groupedData.map((group, gi) => {
+            const coords = groupCoords[gi];
+            return (
+              <div key={gi} style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                <ModuleEditor
+                  header={group.parent}
+                  items={group.items}
+                  parts={parts}
+                  setupItems={setupItems}
+                  spec={spec}
+                  moduls={moduls}
+                  subModuls={subModuls}
+                  hplOptions={hplOptions}
+                  edgOptions={edgOptions}
+                  bhnOptions={bhnOptions}
+                  sectionType={group.parent?.sectionType || 'module'}
+                  badgeText={
+                    group.parent?.sectionType === 'submodule' ? 'SUB MODULE'
+                      : group.parent?.sectionType === 'lepasan' ? 'PART LEPASAN'
+                        : 'MODULE'
+                  }
+                  badgeColor={
+                    group.parent?.sectionType === 'submodule' ? '#7c3aed'
+                      : group.parent?.sectionType === 'lepasan' ? '#059669'
+                        : '#2563eb'
+                  }
+                  badgeBg={
+                    group.parent?.sectionType === 'submodule' ? '#f5f3ff'
+                      : group.parent?.sectionType === 'lepasan' ? '#ecfdf5'
+                        : '#eff6ff'
+                  }
+                  onChange={handleModuleChange}
+                  onCellClick={handleCellClick}
+                  isRefMode={activeInput && activeInput.value?.toString().startsWith('=')}
+                  selectedCoord={coords.selectedCoord}
+                  refCoordsStr={coords.refCoordsStr}
+                  onDeleteModule={() => delModule(group.parent._idx)}
+                  namedRanges={namedRanges}
+                  renderCustomCell={(item, idx, key) => {
+                    const rowNum = (item._idx !== undefined ? item._idx : idx) + 1;
+                    const colLetter = getColLetter(key);
+                    const cellCoord = `${colLetter}${rowNum}`;
+                    const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ'];
+                    const textAlign = centerCols.includes(colLetter) ? 'center' : 'right';
+
+                    let evaluatedVal = evaluateFormula(item[key], data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
+                    if (!item[key]) {
+                      if (key === 't_luar') {
+                        const lFinEval = evaluateFormula(item.l_fin, data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
+                        let resolvedLapLuar = '';
+                        if (!isFinishingEmpty(lFinEval)) {
+                          resolvedLapLuar = resolveLapisanFromCode(lFinEval, spec?.categories || []) || '';
                         }
-                        if (activeInput) setActiveInput({ value: v, setter: activeInput.setter, coord: cellCoord });
-                        if (cellCoord === selectedCoord) setFormulaBarValue(v);
-                      }}
-                    />
-                  );
-                }}
-              />
-            </div>
-          ))}
+                        if (resolvedLapLuar) {
+                          evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapLuar, specAliases), spec?.categories || []);
+                        }
+                      } else if (key === 't_dalam') {
+                        const dFinEval = evaluateFormula(item.d_fin, data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
+                        let resolvedLapDalam = '';
+                        if (!isFinishingEmpty(dFinEval)) {
+                          resolvedLapDalam = resolveLapisanFromCode(dFinEval, spec?.categories || []) || '';
+                        }
+                        if (resolvedLapDalam) {
+                          evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapDalam, specAliases), spec?.categories || []);
+                        }
+                      }
+                    }
+
+                    return (
+                      <FormulaInput
+                        value={item[key]}
+                        textAlign={textAlign}
+                        evaluated={evaluatedVal}
+                        onFocus={(setter) => setActiveInput({ value: item[key], setter, coord: cellCoord })}
+                        onBlur={() => setActiveInput(prev => (prev && prev.coord === cellCoord) ? null : prev)}
+                        onTempChange={v => {
+                          if (cellCoord === selectedCoord) setFormulaBarValue(v);
+                        }}
+                        onChange={v => {
+                          if (item.isParent) {
+                             handleModuleChange({ ...item, [key]: v }, group.items);
+                          } else {
+                             const nextItems = [...group.items];
+                             const localIdx = idx;
+                             nextItems[localIdx] = { ...nextItems[localIdx], [key]: v };
+                             handleModuleChange(group.parent, nextItems);
+                          }
+                          if (activeInput) setActiveInput({ value: v, setter: activeInput.setter, coord: cellCoord });
+                          if (cellCoord === selectedCoord) setFormulaBarValue(v);
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </div>
+            );
+          })}
           <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 12 }}>
             <button
               style={{ padding: '10px 20px', border: '1.5px dashed #3b82f6', borderRadius: 8, background: '#eff6ff', color: '#2563eb', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
@@ -435,14 +517,7 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
           </div>
         </div>
         {showSpecRef && (
-          <div style={{ width: 300, background: '#fff', borderLeft: '1px solid #e5e7eb', padding: 20, overflowY: 'auto' }}>
-            <h4 style={{ margin: '0 0 12px 0' }}>Variabel Spek</h4>
-            {specVariables.map(v => (
-              <div key={v.key} style={{ padding: 8, background: '#f9fafb', borderRadius: 8, marginBottom: 8, border: '1px solid #f3f4f6' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><code style={{ color: '#2563eb' }}>{v.key}</code><span>{v.val}</span></div>
-              </div>
-            ))}
-          </div>
+          <VariablesPanel spec={spec} sections={sections} onVariableClick={onVariableClick} />
         )}
       </div>
 

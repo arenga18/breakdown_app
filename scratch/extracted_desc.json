@@ -1,0 +1,940 @@
+{
+  "descf": [
+    {
+      "code": "11",
+      "name": "WY_5216_D(V)_2mk"
+    },
+    {
+      "code": "12",
+      "name": "WY_5216_D(V)_+_HB_41130"
+    },
+    {
+      "code": "13",
+      "name": "WY_5216_D(V)_1mk_Polos"
+    },
+    {
+      "code": "14",
+      "name": "WY_5216_D(V)_Full 1mk (WY_5216_D(V) rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "15",
+      "name": "WY_5216_D(V)+[Aica]"
+    },
+    {
+      "code": "16",
+      "name": "WY_5216_D(V)+L-FA_0206_AP"
+    },
+    {
+      "code": "17",
+      "name": "WY_5216_D(V)+Aica"
+    },
+    {
+      "code": "22",
+      "name": "HB_41130_2mk"
+    },
+    {
+      "code": "23",
+      "name": "HB_41130_1mk_Polos"
+    },
+    {
+      "code": "24",
+      "name": "HB_41130_Full 1mk_(WY_5216_D(V) rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "25",
+      "name": "HB_41130+[Aica]"
+    },
+    {
+      "code": "27",
+      "name": "HB_41130+Aica"
+    },
+    {
+      "code": "31",
+      "name": "WY_5216_D(V)_1mk_Polos"
+    },
+    {
+      "code": "32",
+      "name": "HB_41130_1mk_Polos"
+    },
+    {
+      "code": "33",
+      "name": "Polos"
+    },
+    {
+      "code": "34",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica)_1mk_Polos"
+    },
+    {
+      "code": "35",
+      "name": "[Aica]_1mk"
+    },
+    {
+      "code": "36",
+      "name": "L-FA_0206_AP_1mk_Polos"
+    },
+    {
+      "code": "37",
+      "name": "Aica_1mk_Polos"
+    },
+    {
+      "code": "311",
+      "name": "Aica_1mk_Polos"
+    },
+    {
+      "code": "312",
+      "name": "Duco_1mk_Polos"
+    },
+    {
+      "code": "73",
+      "name": "Aica_1mk_Polos"
+    },
+    {
+      "code": "74",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica)_1mk Full_Aica"
+    },
+    {
+      "code": "47",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica)_1mk Full_Aica"
+    },
+    {
+      "code": "41",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica) 1mk Full WY_5216_D(V)"
+    },
+    {
+      "code": "42",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica)_1mk Full_HB_41130"
+    },
+    {
+      "code": "44",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica)_2mk"
+    },
+    {
+      "code": "51",
+      "name": "WY_5216_D(V)+[Aica]"
+    },
+    {
+      "code": "52",
+      "name": "HB_41130+[Aica]"
+    },
+    {
+      "code": "53",
+      "name": "[Aica]_1mk"
+    },
+    {
+      "code": "55",
+      "name": "[Aica]_2mk"
+    },
+    {
+      "code": "56",
+      "name": "L-FA_0206_AP + [Aica]"
+    },
+    {
+      "code": "57",
+      "name": "Aica+[Aica]"
+    },
+    {
+      "code": "61",
+      "name": "L-FA_0206_AP + WY_5216_D(V)"
+    },
+    {
+      "code": "64",
+      "name": "L-FA_0206_AP + (WY_5216_D(V) rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "65",
+      "name": "L-FA_0206_AP + [Aica]"
+    },
+    {
+      "code": "67",
+      "name": "L-FA_0206_AP + Aica"
+    },
+    {
+      "code": "76",
+      "name": "L-FA_0206_AP + Aica"
+    },
+    {
+      "code": "71",
+      "name": "WY_5216_D(V) + Aica"
+    },
+    {
+      "code": "72",
+      "name": "HB_41130+Aica"
+    },
+    {
+      "code": "77",
+      "name": "Aica_2mk"
+    },
+    {
+      "code": "75",
+      "name": "Aica_1mk_[Aica]"
+    },
+    {
+      "code": "81",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_WY_5216_D(V)"
+    },
+    {
+      "code": "82",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_HB_41130"
+    },
+    {
+      "code": "87",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_Aica"
+    },
+    {
+      "code": "85",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_[Aica]"
+    },
+    {
+      "code": "91",
+      "name": "DXO_1338_D+WY_5216_D(V)"
+    },
+    {
+      "code": "92",
+      "name": "DXO_1338_D+HB_41130"
+    },
+    {
+      "code": "93",
+      "name": "DXO_1338_D_1mk_Polos"
+    },
+    {
+      "code": "97",
+      "name": "DXO_1338_D+Aica"
+    },
+    {
+      "code": "99",
+      "name": "DXO_1338_D_2mk"
+    },
+    {
+      "code": "95",
+      "name": "DXO_1338_D+[Aica]"
+    },
+    {
+      "code": "18",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_WY_5216_D(V)"
+    },
+    {
+      "code": "28",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_HB_41130"
+    },
+    {
+      "code": "78",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk_Aica"
+    },
+    {
+      "code": "58",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_1mk Full_[Aica]"
+    },
+    {
+      "code": "19",
+      "name": "DXO_1338_D+WY_5216_D(V)"
+    },
+    {
+      "code": "29",
+      "name": "DXO_1338_D+HB_41130"
+    },
+    {
+      "code": "79",
+      "name": "DXO_1338_D+Aica"
+    },
+    {
+      "code": "59",
+      "name": "DXO_1338_D+[Aica]"
+    },
+    {
+      "code": "66",
+      "name": "L-FA_0206_AP_2mk"
+    },
+    {
+      "code": "68",
+      "name": "L-FA_0206_AP_Full 1mk_(L-FA_0206_AP rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "69",
+      "name": "L-FA_0206_AP_1mk_DXO_1338_D"
+    },
+    {
+      "code": "62",
+      "name": "L-FA_0206_AP+HB_41130"
+    },
+    {
+      "code": "63",
+      "name": "L-FA_0206_AP_1mk_Polos"
+    },
+    {
+      "code": "86",
+      "name": "L-FA_0206_AP_Full 1mk_(L-FA_0206_AP rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "88",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)_2mk"
+    },
+    {
+      "code": "89",
+      "name": "(L-FA_0206_AP rangka\u2026\u2026+Aica)+DXO_1338_D"
+    },
+    {
+      "code": "102",
+      "name": "0+HB_41130"
+    },
+    {
+      "code": "103",
+      "name": "0_1mk_Polos"
+    },
+    {
+      "code": "121",
+      "name": "Duco+WY_5216_D(V)"
+    },
+    {
+      "code": "122",
+      "name": "Duco+HB_41130"
+    },
+    {
+      "code": "123",
+      "name": "Duco_1mk_Polos"
+    },
+    {
+      "code": "107",
+      "name": "0_+_Aica"
+    },
+    {
+      "code": "126",
+      "name": "Duco+L-FA_0206_AP"
+    },
+    {
+      "code": "127",
+      "name": "Duco+Aica"
+    },
+    {
+      "code": "128",
+      "name": "Duco_Full 1mk_(L-FA_0206_AP rangka\u2026\u2026+Aica)"
+    },
+    {
+      "code": "129",
+      "name": "Duco+DXO_1338_D"
+    },
+    {
+      "code": "1010",
+      "name": "0_2mk"
+    },
+    {
+      "code": "1212",
+      "name": "Duco_2mk"
+    },
+    {
+      "code": "411",
+      "name": "(WY_5216_D(V) rangka\u2026\u2026+Aica) 1mk Full Aica"
+    },
+    {
+      "code": "711",
+      "name": "Aica+Aica"
+    },
+    {
+      "code": "117",
+      "name": "Aica+Aica"
+    },
+    {
+      "code": "1111",
+      "name": "Aica_2mk"
+    },
+    {
+      "code": "111",
+      "name": "WY_5216_D(V)+Aica"
+    }
+  ],
+  "desce": [
+    {
+      "code": "1111",
+      "name": "Edg_D\u00e9cor_1723_B_Keliling"
+    },
+    {
+      "code": "1112",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_pjg,1sisi_lbr + Melanor_1sisi_lbr"
+    },
+    {
+      "code": "1113",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "3111",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "3311",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_lbr"
+    },
+    {
+      "code": "1311",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "1122",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_pjg + Melanor_2sisi_lbr"
+    },
+    {
+      "code": "1133",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_pjg"
+    },
+    {
+      "code": "2233",
+      "name": "Melanor_2sisi_pjg"
+    },
+    {
+      "code": "2223",
+      "name": "Edg_EAW_5216D1_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "1222",
+      "name": "Edg Kll standart"
+    },
+    {
+      "code": "1233",
+      "name": "Edg 2sisi standart"
+    },
+    {
+      "code": "1144",
+      "name": "Edg_D\u00e9cor_1723_B_2sisi_pjg + Edg_EAW_5216D1_2sisi_lbr"
+    },
+    {
+      "code": "1333",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg"
+    },
+    {
+      "code": "3133",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg"
+    },
+    {
+      "code": "1313",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "2222",
+      "name": "Melanor_Keliling"
+    },
+    {
+      "code": "2322",
+      "name": "Melanor_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "2323",
+      "name": "Melanor_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "2333",
+      "name": "Melanor_1sisi_pjg"
+    },
+    {
+      "code": "3232",
+      "name": "Melanor_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "3434",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "6464",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "3131",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "3313",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_lbr"
+    },
+    {
+      "code": "3313",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_lbr"
+    },
+    {
+      "code": "3322",
+      "name": "Edg_EAW_5216D1_2sisi_lbr"
+    },
+    {
+      "code": "3363",
+      "name": "-"
+    },
+    {
+      "code": "3366",
+      "name": "-"
+    },
+    {
+      "code": "6363",
+      "name": "-"
+    },
+    {
+      "code": "6333",
+      "name": "-"
+    },
+    {
+      "code": "3333",
+      "name": "-"
+    },
+    {
+      "code": "3334",
+      "name": "Edg_EAW_5216D1_1sisi_lbr"
+    },
+    {
+      "code": "3343",
+      "name": "Edg_EAW_5216D1_1sisi_lbr"
+    },
+    {
+      "code": "3344",
+      "name": "Edg_EAW_5216D1_2sisi_lbr"
+    },
+    {
+      "code": "5333",
+      "name": "-"
+    },
+    {
+      "code": "6222",
+      "name": "Melanor_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "4222",
+      "name": "Edg_EAW_5216D1_1sisi_pjg + Melanor_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "4233",
+      "name": "Edg_EAW_5216D1_1sisi_pjg + Melanor_1sisi_pjg"
+    },
+    {
+      "code": "7233",
+      "name": "Melanor_1sisi_pjg"
+    },
+    {
+      "code": "4333",
+      "name": "Edg_EAW_5216D1_1sisi_pjg"
+    },
+    {
+      "code": "4433",
+      "name": "Edg_EAW_5216D1_2sisi_pjg"
+    },
+    {
+      "code": "4434",
+      "name": "Edg_EAW_5216D1_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "4344",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "3444",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "4343",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "4443",
+      "name": "Edg_EAW_5216D1_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "4444",
+      "name": "Edg_EAW_5216D1_Keliling"
+    },
+    {
+      "code": "4455",
+      "name": "Edg_EAW_5216D1_2sisi_pjg/(S2)"
+    },
+    {
+      "code": "5555",
+      "name": "-"
+    },
+    {
+      "code": "5553",
+      "name": "-"
+    },
+    {
+      "code": "3555",
+      "name": "-"
+    },
+    {
+      "code": "5233",
+      "name": "Melanor_1sisi_pjg"
+    },
+    {
+      "code": "5353",
+      "name": "-"
+    },
+    {
+      "code": "5355",
+      "name": "-"
+    },
+    {
+      "code": "5535",
+      "name": "-"
+    },
+    {
+      "code": "5553",
+      "name": "-"
+    },
+    {
+      "code": "5433",
+      "name": "Edg_EAW_5216D1_1sisi_pjg"
+    },
+    {
+      "code": "5444",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "9333",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg"
+    },
+    {
+      "code": "9939",
+      "name": "Edg_EAW_5216_D1(44x1)_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "9993",
+      "name": "Edg_EAW_5216_D1(44x1)_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "9933",
+      "name": "Edg_EAW_5216_D1(44x1)_2sisi_pjg"
+    },
+    {
+      "code": "3999",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "9399",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "9393",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "7799",
+      "name": "Edg_EAW_5216_D1(44x1)_2sisi_lbr"
+    },
+    {
+      "code": "7999",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "7933",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg"
+    },
+    {
+      "code": "3332",
+      "name": "Melanor_1sisi_lbr"
+    },
+    {
+      "code": "3233",
+      "name": "Melanor_1sisi_pjg"
+    },
+    {
+      "code": "3933",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg"
+    },
+    {
+      "code": "3939",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "6666",
+      "name": "-"
+    },
+    {
+      "code": "6444",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "7444",
+      "name": "Edg_EAW_5216D1_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "3666",
+      "name": "-"
+    },
+    {
+      "code": "6366",
+      "name": "-"
+    },
+    {
+      "code": "6633",
+      "name": "-"
+    },
+    {
+      "code": "6636",
+      "name": "-"
+    },
+    {
+      "code": "6663",
+      "name": "-"
+    },
+    {
+      "code": "7777",
+      "name": "-"
+    },
+    {
+      "code": "3777",
+      "name": "-"
+    },
+    {
+      "code": "7377",
+      "name": "-"
+    },
+    {
+      "code": "7737",
+      "name": "-"
+    },
+    {
+      "code": "7773",
+      "name": "-"
+    },
+    {
+      "code": "6999",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "6933",
+      "name": "Edg_EAW_5216_D1(44x1)_1sisi_pjg"
+    },
+    {
+      "code": "1515",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "1511",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "9999",
+      "name": "Edg_EAW_5216_D1(44x1)_Keliling"
+    },
+    {
+      "code": "5111",
+      "name": "Edg_D\u00e9cor_1723_B_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "5101010",
+      "name": "Edg_DSS_00206_SM_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "10101010",
+      "name": "Edg_DSS_00206_SM_Keliling"
+    },
+    {
+      "code": "101033",
+      "name": "Edg_DSS_00206_SM_2sisi_pjg"
+    },
+    {
+      "code": "51033",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg"
+    },
+    {
+      "code": "10333",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg"
+    },
+    {
+      "code": "10233",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg + Melanor_1sisi_pjg"
+    },
+    {
+      "code": "1031010",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "11111111",
+      "name": "Edg_DSS_00206_SM(45X1)_Keliling"
+    },
+    {
+      "code": "111133",
+      "name": "Edg_DSS_00206_SM(45X1)_2sisi_pjg"
+    },
+    {
+      "code": "11333",
+      "name": "Edg_DSS_00206_SM(45X1)_1sisi_pjg"
+    },
+    {
+      "code": "12333",
+      "name": "Edg_Decor_1723_B_(55x1)_1sisi_pjg"
+    },
+    {
+      "code": "123123",
+      "name": "Edg_Decor_1723_B_(55x1)_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "121233",
+      "name": "Edg_Decor_1723_B_(55x1)_2sisi_pjg"
+    },
+    {
+      "code": "12121212",
+      "name": "Edg_Decor_1723_B_(55x1)_Keliling"
+    },
+    {
+      "code": "13131313",
+      "name": "Edg_EAP_1338_DO_Keliling"
+    },
+    {
+      "code": "131333",
+      "name": "Edg_EAP_1338_DO_2sisi_pjg"
+    },
+    {
+      "code": "13333",
+      "name": "Edg_EAP_1338_DO_1sisi_pjg"
+    },
+    {
+      "code": "1010103",
+      "name": "Edg_DSS_00206_SM_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "3111111",
+      "name": "Edg_DSS_00206_SM(45X1)_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "1313133",
+      "name": "Edg_EAP_1338_DO_2sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "133133",
+      "name": "Edg_EAP_1338_DO_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "1331313",
+      "name": "Edg_EAP_1338_DO_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "14333",
+      "name": "0_1sisi_pjg"
+    },
+    {
+      "code": "15151515",
+      "name": "Edg_Decor_2023_B_Keliling"
+    },
+    {
+      "code": "151533",
+      "name": "Edg_Decor_2023_B_2sisi_pjg"
+    },
+    {
+      "code": "33103",
+      "name": "Edg_DSS_00206_SM_1sisi_lbr"
+    },
+    {
+      "code": "33310",
+      "name": "Edg_DSS_00206_SM_1sisi_lbr"
+    },
+    {
+      "code": "331010",
+      "name": "Edg_DSS_00206_SM_2sisi_lbr"
+    },
+    {
+      "code": "310310",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "310103",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "103310",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "103103",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,1sisi_lbr"
+    },
+    {
+      "code": "33313",
+      "name": "Edg_EAP_1338_DO_1sisi_lbr"
+    },
+    {
+      "code": "7101010",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg,2sisi_lbr"
+    },
+    {
+      "code": "71033",
+      "name": "Edg_DSS_00206_SM_1sisi_pjg"
+    }
+  ],
+  "descfr": [
+    {
+      "code": "2222",
+      "name": "(Tanpa_Handle)"
+    },
+    {
+      "code": "3222",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "2322",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "3322",
+      "name": "(Handle_2sisi_panjang)"
+    },
+    {
+      "code": "2232",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2223",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2233",
+      "name": "(Handle_2sisi_lebar)"
+    },
+    {
+      "code": "3333",
+      "name": "(Tanpa_Handle)"
+    },
+    {
+      "code": "2422",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "4222",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "2242",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2224",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2522",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "5222",
+      "name": "(Handle_1sisi_panjang)"
+    },
+    {
+      "code": "5522",
+      "name": "(Handle_2sisi_panjang)"
+    },
+    {
+      "code": "2252",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2225",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "2225",
+      "name": "(Handle_1sisi_lebar)"
+    },
+    {
+      "code": "6666",
+      "name": "-"
+    },
+    {
+      "code": "7777",
+      "name": "-"
+    },
+    {
+      "code": "8899",
+      "name": "(Handle_2sisi_panjang)"
+    }
+  ]
+}

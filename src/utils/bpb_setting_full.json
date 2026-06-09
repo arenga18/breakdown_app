@@ -1,0 +1,1163 @@
+[
+  {
+    "row_idx": 13,
+    "line_no": "1",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C13,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=minifix_hettich",
+    "jml_formula": "=ROUNDUP((SUMIF(minifix,C13,jumlah_minifix)*1.05),0)",
+    "satuan": "SET",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 14,
+    "line_no": "2",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C14,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=dowel\u00d88",
+    "jml_formula": "=ROUNDUP((SUMIF(dowel,C14,jumlah_dowel)*1.05),0)",
+    "satuan": "BH",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 15,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 16,
+    "line_no": "3",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C16,BARANG,0)),\"\u2026\")",
+    "nama_barang": "LAKBAN KERTAS",
+    "jml_formula": "=+ROUNDUP(D17+D18,0)",
+    "satuan": "ROL",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 17,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C17,BARANG,0)),\"\u2026\")",
+    "nama_barang": "SILICONE SIKAFLEX 221 PUTIH",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C17,_2PL)/tube_meter)+(SUMIF(profil_2,C17,P)/tube_meter),0)",
+    "satuan": "TUB",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 18,
+    "line_no": "",
+    "id_barang": "206603",
+    "nama_barang": "SILICONE MAX BOND",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C18,_2PL)/tube_meter)+(SUMIF(profil_2,C18,P)/tube_meter),0)",
+    "satuan": "TUB",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 19,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 20,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 21,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C21,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel1",
+    "jml_formula": "=SUMIF(RelI,C21,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 22,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C22,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel2",
+    "jml_formula": "=SUMIF(RelI,C22,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 23,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C23,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel3",
+    "jml_formula": "=SUMIF(RelI,C23,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 24,
+    "line_no": "4",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C24,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel4",
+    "jml_formula": "=SUMIF(RelI,C24,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 25,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C25,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel5",
+    "jml_formula": "=SUMIF(RelI,C25,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 26,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C26,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel6",
+    "jml_formula": "=SUMIF(RelI,C26,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 27,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C27,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel7",
+    "jml_formula": "=SUMIF(RelI,C27,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 28,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C28,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel8",
+    "jml_formula": "=SUMIF(RelI,C28,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 29,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C29,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel9",
+    "jml_formula": "=SUMIF(RelI,C29,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 30,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C30,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel10",
+    "jml_formula": "=SUMIF(RelI,C30,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 31,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C31,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel11",
+    "jml_formula": "=SUMIF(RelI,C31,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 32,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C32,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel12",
+    "jml_formula": "=SUMIF(RelI,C32,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 33,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C33,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel13",
+    "jml_formula": "=SUMIF(RelI,C33,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 34,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C34,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=_rel14",
+    "jml_formula": "=SUMIF(RelI,C34,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 35,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 36,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C36,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=bb_full_50",
+    "jml_formula": "=SUMIF(RelI,C36,Rel)",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 37,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 38,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 39,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C39,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=tip_on_1",
+    "jml_formula": "0",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 40,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C40,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=tip_on_2",
+    "jml_formula": "0",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 41,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C41,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=tip_on_3",
+    "jml_formula": "0",
+    "satuan": "PSG",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 42,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 43,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 44,
+    "line_no": "5",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C44,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel1",
+    "jml_formula": "=SUMIF(EI,C44,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 45,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C45,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel2",
+    "jml_formula": "=SUMIF(EI,C45,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 46,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C46,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel3",
+    "jml_formula": "=SUMIF(EI,C46,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 47,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C47,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel4",
+    "jml_formula": "=SUMIF(EI,C47,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 48,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C48,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel5",
+    "jml_formula": "=SUMIF(EI,C48,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 49,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C49,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel6",
+    "jml_formula": "=SUMIF(EI,C49,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 50,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C50,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel7",
+    "jml_formula": "=SUMIF(EI,C50,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 51,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C51,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel8",
+    "jml_formula": "=SUMIF(EI,C51,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 52,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C52,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel9",
+    "jml_formula": "=SUMIF(EI,C52,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 53,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C53,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel10",
+    "jml_formula": "=SUMIF(EI,C53,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 54,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 55,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C55,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=wl77_2pintu",
+    "jml_formula": "=SUMIF(EI,C55,jumlah_pemakaian)",
+    "satuan": "set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 56,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C56,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=wl77_ra",
+    "jml_formula": "=+D55/2",
+    "satuan": "btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 57,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C57,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=wl77_rb",
+    "jml_formula": "=+D55/2",
+    "satuan": "btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 58,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 59,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C59,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=wl230_4pintu",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 60,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C60,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=wl230_ra",
+    "jml_formula": "0",
+    "satuan": "pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 61,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 62,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C62,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=engsel10",
+    "jml_formula": "=SUMIF(EI,C62,E)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 63,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C63,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=roda_atas_fold_formwell",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 64,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C64,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=rel_atas_fold_formwell",
+    "jml_formula": "0",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 65,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 66,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C66,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=sl_56_kit",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 67,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C67,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=sl_56_track",
+    "jml_formula": "0",
+    "satuan": "Btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 68,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 69,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 70,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 71,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C71,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=PD_blum_55",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 72,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 73,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C73,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=camar_807",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 74,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C74,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=libra_h6",
+    "jml_formula": "0",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 75,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C75,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=libra_Ch",
+    "jml_formula": "0",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 76,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 77,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 78,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C78,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=lapisan1",
+    "jml_formula": "",
+    "satuan": "lbr",
+    "keterangan": "2440 X 350 X 0.8"
+  },
+  {
+    "row_idx": 79,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C79,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=lapisan3",
+    "jml_formula": "",
+    "satuan": "lbr",
+    "keterangan": "2440 X 1220 X 0.8"
+  },
+  {
+    "row_idx": 80,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C80,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=lapisan5",
+    "jml_formula": "",
+    "satuan": "lbr",
+    "keterangan": "2440 X 1220 X 0.8"
+  },
+  {
+    "row_idx": 81,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C81,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=lapisan6",
+    "jml_formula": "",
+    "satuan": "lbr",
+    "keterangan": "2440 X 1220 X 0.8"
+  },
+  {
+    "row_idx": 82,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C82,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=lapisan6",
+    "jml_formula": "",
+    "satuan": "lbr",
+    "keterangan": "2440 X 1220 X 0.8"
+  },
+  {
+    "row_idx": 83,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 84,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C84,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edgingkab1",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C84,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ tukang"
+  },
+  {
+    "row_idx": 85,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C85,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edgingkab2",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C85,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": " u/ tukang"
+  },
+  {
+    "row_idx": 86,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C86,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging1",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C86,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ tukang"
+  },
+  {
+    "row_idx": 87,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C87,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging2",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C87,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": " u/ tukang"
+  },
+  {
+    "row_idx": 88,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C88,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging3",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C88,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ tukang"
+  },
+  {
+    "row_idx": 89,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C89,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging4",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizeh,C89,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": " u/ tukang"
+  },
+  {
+    "row_idx": 90,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 91,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C91,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edgingkab1",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C91,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ Witono"
+  },
+  {
+    "row_idx": 92,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C92,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edgingkab2",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C92,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": " u/ Witono"
+  },
+  {
+    "row_idx": 93,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C93,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging1",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C93,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ Witono"
+  },
+  {
+    "row_idx": 94,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C94,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging2",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C94,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "( u/ Witono"
+  },
+  {
+    "row_idx": 95,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C95,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging3",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C95,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": "(uk.23x1) u/ Witono"
+  },
+  {
+    "row_idx": 96,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C96,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=edging4",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C96,_2PL)/1),0)",
+    "satuan": "Mtr",
+    "keterangan": " u/ Witono"
+  },
+  {
+    "row_idx": 97,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 98,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 99,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 100,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C100,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=acrylic_mled",
+    "jml_formula": "=ROUNDUP(jumlah_mled*3000/1220,0)+10%+jumlah_mled_manual",
+    "satuan": "Btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 101,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 102,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C102,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=plat_join",
+    "jml_formula": "0",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 103,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 104,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 105,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 106,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 107,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C107,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=sikubr",
+    "jml_formula": "=ROUNDUP((SUMIF(siku_joint,C107,jumlah_pemakaian)*3),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 108,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 109,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C109,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=m_grill_01",
+    "jml_formula": "=ROUNDUP((SUMIF(siku_joint,C109,jumlah_pemakaian)),0)",
+    "satuan": "Pcs",
+    "keterangan": "warna . . . (untuk gloss/doff disamakan dengan ketersediaan plinth)"
+  },
+  {
+    "row_idx": 110,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 111,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C111,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=camar_807",
+    "jml_formula": "=ROUNDUP((SUMIF(siku_joint,C111,jumlah_pemakaian)),0)",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 112,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C112,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=libra_h6",
+    "jml_formula": "=ROUNDUP((SUMIF(siku_joint,C112,jumlah_pemakaian)),0)",
+    "satuan": "Set",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 113,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C113,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=libra_Ch",
+    "jml_formula": "=ROUNDUP((SUMIF(siku_joint,C113,jumlah_pemakaian)),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 114,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 115,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 116,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 117,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 118,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C118,BARANG,0)),\"\u2026\")",
+    "nama_barang": "besi astal \u00d85mm ; 408mm",
+    "jml_formula": "0",
+    "satuan": "Pcs",
+    "keterangan": "duco brown doff"
+  },
+  {
+    "row_idx": 119,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 120,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 121,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "Handle MHT - 020 Champaigne Gloss",
+    "jml_formula": "=ROUNDUP((SUMIF(anodizev,C121,jumlah_pemakaian)),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 122,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 123,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C123,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pintu_1",
+    "jml_formula": "=ROUNDUP((SUMIF(profil,C123,_2PL)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": "U/ Pintu+panel"
+  },
+  {
+    "row_idx": 124,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C124,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pintu_2",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_2,C124,_2PL)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": "U/ Pintu+panel"
+  },
+  {
+    "row_idx": 125,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C125,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=Prof_pintu_3",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C125,_2PL)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": "U/ Pintu+panel"
+  },
+  {
+    "row_idx": 126,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C126,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=Prof_pintu_3",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C126,jumlah_pemakaian)*4),0)",
+    "satuan": "Pcs",
+    "keterangan": "U/ Pintu+panel"
+  },
+  {
+    "row_idx": 127,
+    "line_no": "",
+    "id_barang": "\u2026",
+    "nama_barang": "Profil CNC R5 (lengkung R25) untuk sudut (70x60x15)",
+    "jml_formula": "=+D126",
+    "satuan": "Pcs",
+    "keterangan": "U/ Pintu+panel"
+  },
+  {
+    "row_idx": 128,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 129,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C129,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_cor_3",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C129,P)/2.2),0)*2",
+    "satuan": "btg",
+    "keterangan": "U/ Cornice"
+  },
+  {
+    "row_idx": 130,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C130,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_cor_2",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_2,C130,P)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": "U/ Cornice"
+  },
+  {
+    "row_idx": 131,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C131,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_cor_1",
+    "jml_formula": "=ROUNDUP((SUMIF(profil,C131,P)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": "U/ Cornice"
+  },
+  {
+    "row_idx": 132,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 133,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C133,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_panel_3",
+    "jml_formula": "=ROUNDUP((SUMIF(profil,C133,P)/2.2),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 134,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C134,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_panel_2",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_2,C134,P)/2.2),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 135,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C135,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_panel_1",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C135,P)/2.2),0)",
+    "satuan": "Pcs",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 136,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 137,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C137,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pl_1",
+    "jml_formula": "=ROUNDUP((SUMIF(profil,C137,P)/2.35),0)",
+    "satuan": "btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 138,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C138,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pl_2",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_2,C138,P)/2.35),0)",
+    "satuan": "btg",
+    "keterangan": "tebal 18mm"
+  },
+  {
+    "row_idx": 139,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C139,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pl_3",
+    "jml_formula": "=ROUNDUP((SUMIF(profil_3,C139,_2PL)/2.2),0)",
+    "satuan": "btg",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 140,
+    "line_no": "",
+    "id_barang": "",
+    "nama_barang": "",
+    "jml_formula": "",
+    "satuan": "",
+    "keterangan": ""
+  },
+  {
+    "row_idx": 141,
+    "line_no": "",
+    "id_barang": "=IFERROR(INDEX((ID),MATCH(C141,BARANG,0)),\"\u2026\")",
+    "nama_barang": "=prof_pl_1",
+    "jml_formula": "0",
+    "satuan": "btg",
+    "keterangan": "tebal 18mm"
+  }
+]

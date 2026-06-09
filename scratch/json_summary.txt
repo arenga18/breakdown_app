@@ -1,0 +1,150 @@
+Row 169 | Type: Ref | Komp: TC Mw+Disp-║H◄5'+2+│-sw3K29a-pu0h50
+  P: 602 | L: 600 | T: 2404 | Sub: None | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H169,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H169,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO169=0,0,IF(J169<=fp,2,(ROUNDUP(J169/fp,0))))*Q169 | Rel: =IF($AN169=0,0,1)*Q169
+--------------------------------------------------
+Row 170 | Type: prt | Komp: Dinding Samping I
+  P: =N169 | L: =+L169 | T: =+(S170+W170+Y170) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H170,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H170,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H170,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H170,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H170,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H170,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H170,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H170,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H170,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H170,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H170,Prt,0)),"")*Q170 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H170,Prt,0)),"")*Q170 | Engsel: =IF($AO170=0,0,IF(J170<=fp,2,(ROUNDUP(J170/fp,0))))*Q170 | Rel: =IF($AN170=0,0,1)*Q170
+--------------------------------------------------
+Row 171 | Type: prt | Komp: Dinding Samping
+  P: =N169 | L: =+L169 | T: =+(S171+W171+Y171) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H171,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H171,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H171,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H171,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H171,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H171,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H171,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H171,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H171,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H171,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H171,Prt,0)),"")*Q171 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H171,Prt,0)),"")*Q171 | Engsel: =IF($AO171=0,0,IF(J171<=fp,2,(ROUNDUP(J171/fp,0))))*Q171 | Rel: =IF($AN171=0,0,1)*Q171
+--------------------------------------------------
+Row 172 | Type: prt | Komp: Dinding Atas Bawah
+  P: =ROUNDDOWN((J169-N170-N171),0) | L: =+L169 | T: =+(S172+W172+Y172) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H172,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H172,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H172,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H172,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H172,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H172,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H172,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H172,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H172,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H172,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H172,Prt,0)),"")*Q172 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H172,Prt,0)),"")*Q172 | Engsel: =IF($AO172=0,0,IF(J172<=fp,2,(ROUNDUP(J172/fp,0))))*Q172 | Rel: =IF($AN172=0,0,1)*Q172
+--------------------------------------------------
+Row 173 | Type: prt | Komp: Dinding Atas Bawah
+  P: =+J172 | L: =+L169-50 | T: =+(S173+W173+Y173) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H173,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H173,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H173,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H173,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H173,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H173,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H173,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H173,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H173,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H173,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H173,Prt,0)),"")*Q173 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H173,Prt,0)),"")*Q173 | Engsel: =IF($AO173=0,0,IF(J173<=fp,2,(ROUNDUP(J173/fp,0))))*Q173 | Rel: =IF($AN173=0,0,1)*Q173
+--------------------------------------------------
+Row 174 | Type: prt | Komp: Dinding Atas Bawah ≈
+  P: =J172 | L: =+L169-50 | T: =+(S174+W174+Y174) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H174,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H174,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H174,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H174,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H174,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H174,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H174,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H174,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H174,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H174,Prt,0)),"")*Q174 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H174,Prt,0)),"")*Q174 | Engsel: =IF($AO174=0,0,IF(J174<=fp,2,(ROUNDUP(J174/fp,0))))*Q174 | Rel: =IF($AN174=0,0,1)*Q174
+--------------------------------------------------
+Row 175 | Type: prt | Komp: Dinding Belakang
+  P: =+N169-11-50 | L: =J169-21 | T: =+(S175+W175+Y175) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H175,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H175,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H175,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H175,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H175,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H175,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H175,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H175,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H175,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H175,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H175,Prt,0)),"")*Q175 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H175,Prt,0)),"")*Q175 | Engsel: =IF($AO175=0,0,IF(J175<=fp,2,(ROUNDUP(J175/fp,0))))*Q175 | Rel: =IF($AN175=0,0,1)*Q175
+--------------------------------------------------
+Row 176 | Type: prt | Komp: Dinding Belakang
+  P: =696+9-22 | L: =+L175 | T: =+(S176+W176+Y176) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H176,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H176,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H176,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H176,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H176,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H176,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H176,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H176,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H176,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H176,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H176,Prt,0)),"")*Q176 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H176,Prt,0)),"")*Q176 | Engsel: =IF($AO176=0,0,IF(J176<=fp,2,(ROUNDUP(J176/fp,0))))*Q176 | Rel: =IF($AN176=0,0,1)*Q176
+--------------------------------------------------
+Row 177 | Type: prt | Komp: Ambalan mati
+  P: =+J172 | L: =+L169-18 | T: =+(S177+W177+Y177) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H177,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H177,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H177,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H177,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H177,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H177,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H177,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H177,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H177,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H177,Prt,0)),"")*Q177 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H177,Prt,0)),"")*Q177 | Engsel: =IF($AO177=0,0,IF(J177<=fp,2,(ROUNDUP(J177/fp,0))))*Q177 | Rel: =IF($AN177=0,0,1)*Q177
+--------------------------------------------------
+Row 178 | Type: prt | Komp: Ambalan mati
+  P: =+J177 | L: =+L169-50-T_gola | T: =+(S178+W178+Y178) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H178,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H178,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H178,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H178,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H178,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H178,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H178,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H178,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H178,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H178,Prt,0)),"")*Q178 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H178,Prt,0)),"")*Q178 | Engsel: =IF($AO178=0,0,IF(J178<=fp,2,(ROUNDUP(J178/fp,0))))*Q178 | Rel: =IF($AN178=0,0,1)*Q178
+--------------------------------------------------
+Row 179 | Type: prt | Komp: Sekat
+  P: 1149 | L: =+L177 | T: =+(S179+W179+Y179) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H179,Prt,0)),"")
+  FinLuar: 1 | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H179,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H179,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H179,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H179,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H179,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H179,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H179,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H179,Prt,0)),"")*Q179 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H179,Prt,0)),"")*Q179 | Engsel: =IF($AO179=0,0,IF(J179<=fp,2,(ROUNDUP(J179/fp,0))))*Q179 | Rel: =IF($AN179=0,0,1)*Q179
+--------------------------------------------------
+Row 180 | Type: prt | Komp: Ambalan mati OS
+  P: 154 | L: =+L179-3 | T: =+(S180+W180+Y180) | Sub: 3 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H180,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H180,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H180,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H180,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H180,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H180,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H180,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H180,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H180,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H180,Prt,0)),"")*Q180 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H180,Prt,0)),"")*Q180 | Engsel: =IF($AO180=0,0,IF(J180<=fp,2,(ROUNDUP(J180/fp,0))))*Q180 | Rel: =IF($AN180=0,0,1)*Q180
+--------------------------------------------------
+Row 181 | Type: prt | Komp: Ambalan hidup
+  P: =+J172-tol | L: =+L172-25 | T: =+(S181+W181+Y181) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H181,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H181,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H181,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H181,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H181,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H181,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H181,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H181,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H181,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H181,Prt,0)),"")*Q181 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H181,Prt,0)),"")*Q181 | Engsel: =IF($AO181=0,0,IF(J181<=fp,2,(ROUNDUP(J181/fp,0))))*Q181 | Rel: =IF($AN181=0,0,1)*Q181
+--------------------------------------------------
+Row 182 | Type: None | Komp: None
+  P: None | L: None | T: None | Sub: None | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H182,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H182,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO182=0,0,IF(J182<=fp,2,(ROUNDUP(J182/fp,0))))*Q182 | Rel: None
+--------------------------------------------------
+Row 183 | Type: Set_up | Komp: Dasar Laci Pull Out (rakit tukang)
+  P: =+J186 | L: =+L186 | T: 19/28 | Sub: 1 | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H183,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H183,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO183=0,0,IF(J183<=fp,2,(ROUNDUP(J183/fp,0))))*Q183 | Rel: =IF($AN183=0,0,1)*Q183
+--------------------------------------------------
+Row 184 | Type: prt | Komp: Ambalan hidup
+  P: 506 | L: 50 | T: =+(S184+W184+Y184) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H184,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H184,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H184,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H184,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H184,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H184,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H184,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H184,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H184,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H184,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H184,Prt,0)),"")*Q184 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H184,Prt,0)),"")*Q184 | Engsel: =IF($AO184=0,0,IF(J184<=fp,2,(ROUNDUP(J184/fp,0))))*Q184 | Rel: =IF($AN184=0,0,1)*Q184
+--------------------------------------------------
+Row 185 | Type: prt | Komp: Tutup laci dalam
+  P: 65 | L: =391-N184-2 | T: =+(S185+W185+Y185) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H185,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H185,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H185,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H185,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H185,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H185,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H185,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H185,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H185,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H185,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H185,Prt,0)),"")*Q185 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H185,Prt,0)),"")*Q185 | Engsel: =IF($AO185=0,0,IF(J185<=fp,2,(ROUNDUP(J185/fp,0))))*Q185 | Rel: =IF($AN185=0,0,1)*Q185
+--------------------------------------------------
+Row 186 | Type: prt | Komp: Dasar laci Pull Out
+  P: =391-Tdm+30-N184 | L: 490 | T: =+(S186+W186+Y186) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H186,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H186,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H186,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H186,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H186,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H186,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H186,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H186,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H186,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H186,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H186,Prt,0)),"")*Q186 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H186,Prt,0)),"")*Q186 | Engsel: =IF($AO186=0,0,IF(J186<=fp,2,(ROUNDUP(J186/fp,0))))*Q186 | Rel: =IF($AN186=0,0,1)*Q186
+--------------------------------------------------
+Row 187 | Type: None | Komp: None
+  P: None | L: None | T: None | Sub: None | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H187,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H187,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO187=0,0,IF(J187<=fp,2,(ROUNDUP(J187/fp,0))))*Q187 | Rel: None
+--------------------------------------------------
+Row 188 | Type: Set_up | Komp: Pintu Kaca (ukuran tunggu info)
+  P: 718 | L: =+(J169/P188)-nat-nat | T: 20 | Sub: 1 | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H188,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H188,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO188=0,0,IF(J188<=fp,2,(ROUNDUP(J188/fp,0))))*Q188 | Rel: =IF($AN188=0,0,1)*Q188
+--------------------------------------------------
+Row 189 | Type: prt | Komp: Pintu Kaca S2
+  P: =+J188-trim-trim | L: =L188 | T: =+(S189+W189+Y189) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H189,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H189,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H189,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H189,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H189,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H189,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H189,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H189,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H189,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H189,Prt,0)),"")*Q189 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H189,Prt,0)),"")*Q189 | Engsel: =IF($AO189=0,0,IF(J189<=fp,2,(ROUNDUP(J189/fp,0))))*Q189 | Rel: =IF($AN189=0,0,1)*Q189
+--------------------------------------------------
+Row 190 | Type: prt | Komp: Kaca_
+  P: =+J189-1 | L: =+L189-1 | T: =+(S190+W190+Y190) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H190,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H190,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H190,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H190,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H190,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H190,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H190,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H190,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H190,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H190,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H190,Prt,0)),"")*Q190 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H190,Prt,0)),"")*Q190 | Engsel: =IF($AO190=0,0,IF(J190<=fp,2,(ROUNDUP(J190/fp,0))))*Q190 | Rel: =IF($AN190=0,0,1)*Q190
+--------------------------------------------------
+Row 191 | Type: None | Komp: None
+  P: None | L: None | T: None | Sub: None | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H191,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H191,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO191=0,0,IF(J191<=fp,2,(ROUNDUP(J191/fp,0))))*Q191 | Rel: None
+--------------------------------------------------
+Row 192 | Type: Set_up | Komp: Pintu Kaca (ukuran tunggu info)
+  P: 1200 | L: =410-nat-nat | T: 20 | Sub: 1 | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H192,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H192,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO192=0,0,IF(J192<=fp,2,(ROUNDUP(J192/fp,0))))*Q192 | Rel: =IF($AN192=0,0,1)*Q192
+--------------------------------------------------
+Row 193 | Type: prt | Komp: Pintu Kaca S2
+  P: =+J192-trim-trim | L: =L192 | T: =+(S193+W193+Y193) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H193,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H193,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H193,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H193,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H193,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H193,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H193,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H193,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H193,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H193,Prt,0)),"")*Q193 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H193,Prt,0)),"")*Q193 | Engsel: =IF($AO193=0,0,IF(J193<=fp,2,(ROUNDUP(J193/fp,0))))*Q193 | Rel: =IF($AN193=0,0,1)*Q193
+--------------------------------------------------
+Row 194 | Type: prt | Komp: Kaca_
+  P: =+J193-1 | L: =+L193-1 | T: =+(S194+W194+Y194) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H194,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H194,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H194,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H194,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H194,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H194,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H194,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H194,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H194,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H194,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H194,Prt,0)),"")*Q194 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H194,Prt,0)),"")*Q194 | Engsel: =IF($AO194=0,0,IF(J194<=fp,2,(ROUNDUP(J194/fp,0))))*Q194 | Rel: =IF($AN194=0,0,1)*Q194
+--------------------------------------------------
+Row 195 | Type: None | Komp: None
+  P: None | L: None | T: None | Sub: None | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H195,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H195,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO195=0,0,IF(J195<=fp,2,(ROUNDUP(J195/fp,0))))*Q195 | Rel: None
+--------------------------------------------------
+Row 196 | Type: Set_up | Komp: Pintu Kaca S2 (rakit tukang)
+  P: 1200 | L: =192-nat-nat | T: 20 | Sub: 1 | Bhn: None
+  FinLuar: None | FinDalam: None | P1-2: None,None | L1-2: None,None
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H196,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H196,Prt,0)),"") | Siku: None | Screw: None | Engsel: =IF($AO196=0,0,IF(J196<=fp,2,(ROUNDUP(J196/fp,0))))*Q196 | Rel: =IF($AN196=0,0,1)*Q196
+--------------------------------------------------
+Row 197 | Type: prt | Komp: Pintu Kaca S2
+  P: =+J196-trim-trim | L: =L196 | T: =+(S197+W197+Y197) | Sub: 1 | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H197,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H197,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H197,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H197,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H197,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H197,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H197,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H197,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H197,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H197,Prt,0)),"")*Q197 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H197,Prt,0)),"")*Q197 | Engsel: =IF($AO197=0,0,IF(J197<=fp,2,(ROUNDUP(J197/fp,0))))*Q197 | Rel: =IF($AN197=0,0,1)*Q197
+--------------------------------------------------
+Row 198 | Type: prt | Komp: Kaca_
+  P: =+J197-1 | L: =+L197-1 | T: =+(S198+W198+Y198) | Sub: =IFERROR(INDEX((std_sub_prt),MATCH($H198,Prt,0)),"") | Bhn: =IFERROR(INDEX((std_bhn_prt),MATCH($H198,Prt,0)),"")
+  FinLuar: =INDEX((std_lapisan_luar_prt),MATCH($H198,Prt,0)) | FinDalam: =INDEX((std_lapisan_dalam_prt),MATCH($H198,Prt,0)) | P1-2: =INDEX((std_edg_P1_prt),MATCH($H198,Prt,0)),=INDEX((std_edg_P2_prt),MATCH($H198,Prt,0)) | L1-2: =INDEX((std_edg_L1_prt),MATCH($H198,Prt,0)),=INDEX((std_edg_L2_prt),MATCH($H198,Prt,0))
+  Minifix: =IFERROR(INDEX((std_minifix_prt),MATCH($H198,Prt,0)),"") | Dowel: =IFERROR(INDEX((std_dowel_prt),MATCH($H198,Prt,0)),"") | Siku: =IFERROR(INDEX((std_j_sikufr_prt),MATCH($H198,Prt,0)),"")*Q198 | Screw: =IFERROR(INDEX((std_j_screwjf_prt),MATCH($H198,Prt,0)),"")*Q198 | Engsel: =IF($AO198=0,0,IF(J198<=fp,2,(ROUNDUP(J198/fp,0))))*Q198 | Rel: =IF($AN198=0,0,1)*Q198
+--------------------------------------------------

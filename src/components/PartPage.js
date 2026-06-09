@@ -10,6 +10,8 @@ const COLUMNS = [
   { key: 'jml_sub', label: 'Jml Sub', width: 60, type: 'number' },
   { key: 'bhn', label: 'Bhn', width: 80, type: 'text' },
   { key: 't', label: 'T', width: 50, type: 'number' },
+  { key: 'minifix', label: 'Minifix', width: 140, type: 'text' },
+  { key: 'dowel', label: 'Dowel', width: 140, type: 'text' },
   { key: 'tipe_siku', label: 'Tipe Siku', width: 150, type: 'text' },
   { key: 'q_siku', label: '@Siku', width: 70, type: 'number' },
   { key: 'tipe_screw', label: 'Tipe Screw', width: 150, type: 'text' },
@@ -33,6 +35,7 @@ const OVERSCAN = 8;
 
 const empty = {
   val: '', code: '', name: '', ks: 'KS', jml_sub: 1, bhn: 'Ply', t: 18,
+  minifix: '', dowel: '',
   l: 0, d: 0, p1: 0, p2: 0, l1: 0, l2: 0,
   tipe_siku: '', q_siku: 0, tipe_screw: '', q_screw: 0,
   rel: '', engsel: '', anodize: '', q_anodize: 0, p_val: 0, l_val: 0
@@ -237,6 +240,7 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
     const obj = {
       ...form,
       val: num(form.val), jml_sub: num(form.jml_sub), t: num(form.t),
+      minifix: form.minifix, dowel: form.dowel,
       l: num(form.l), d: num(form.d), p1: num(form.p1), p2: num(form.p2),
       l1: num(form.l1), l2: num(form.l2), q_siku: num(form.q_siku),
       q_screw: num(form.q_screw), q_anodize: num(form.q_anodize),
@@ -292,6 +296,10 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
           <FormGroup label="Jml Sub"><input style={s.input} type="number" value={form.jml_sub} onChange={f('jml_sub')} /></FormGroup>
         </FormRow>
         <div style={{ padding: '8px 0', borderTop: '1px solid #eee', marginTop: 10, fontWeight: 600, fontSize: 13, color: '#3b82f6' }}>1. Hardware & Fitting</div>
+        <FormRow>
+          <FormGroup label="Minifix"><input style={s.input} value={form.minifix} onChange={f('minifix')} /></FormGroup>
+          <FormGroup label="Dowel"><input style={s.input} value={form.dowel} onChange={f('dowel')} /></FormGroup>
+        </FormRow>
         <FormRow>
           <FormGroup label="Tipe Siku"><input style={s.input} value={form.tipe_siku} onChange={f('tipe_siku')} /></FormGroup>
           <FormGroup label="@ Jumlah Siku"><input style={s.input} type="number" value={form.q_siku} onChange={f('q_siku')} /></FormGroup>

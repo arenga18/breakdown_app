@@ -1,10 +1,11 @@
 # Skill: Cabinet Breakdown Formula Migration
 **Untuk**: Google Antigravity  
 **Domain**: Furniture Manufacturing / Interior Production  
-**Versi**: 1.0  
+**Versi**: 1.1 (Checkpoint 9 Juni 2026)  
 **Bahasa**: Bahasa Indonesia / English (bilingual)
 
 ---
+
 
 ## Deskripsi Skill
 
@@ -223,37 +224,50 @@ const T_P1 = stock.edging.find(e => e.name === row.edg_P1_name)?.thickness ?? ""
 
 | Kolom | Field        | Logika Kalkulasi                                                     |
 |-------|--------------|----------------------------------------------------------------------|
-| BD    | `minifix`    | Flag biner dari master DB                                            |
-| BE    | `dowel`      | Flag biner dari master DB                                            |
-| BF    | `siku`       | Qty siku dari master DB                                              |
-| BG    | `screw`      | Qty screw dari master DB                                             |
+| BD    | `minifix`    | Flag biner dari master DB (`q_minifix`: `0` = tidak ada, `1` = ada) |
+| BE    | `dowel`      | Flag biner dari master DB (`q_dowel`: `0` = tidak ada, `1` = ada)   |
+| BF    | `siku`       | Qty siku dari master DB (`q_siku`)                                   |
+| BG    | `screw`      | Qty screw dari master DB (`q_screw`)                                 |
 | BI    | `Engsel`     | `(J <= fp) ? 2 : Math.ceil(J / fp)` lalu × Q                       |
-| BS    | `minifix @`  | `(L < 150) ? 2 : Math.ceil(L / fm) * 2` lalu × Q                  |
-| BT    | `dowel @`    | `(L < 150) ? 2 : Math.ceil(L / fd) * 2` lalu × Q                  |
-| BU    | `jml siku`   | `siku_per_unit × Q`                                                 |
-| BV    | `jml screw`  | `screw_per_unit × Q`                                                |
+| BS    | `minifix @`  | `=IF(BD=0; 0; IF(L<150; 2; ROUNDUP(L/fm;0)*2)) * Q`               |
+| BT    | `dowel @`    | `=IF(BE=0; 0; IF(L<150; 2; ROUNDUP(L/fd;0)*2)) * Q`               |
+| BU    | `jml siku`   | `q_siku × Q`                                                        |
+| BV    | `jml screw`  | `q_screw × Q`                                                       |
+
+> [!IMPORTANT]
+> **Gate pertama adalah FLAG dari kolom BD/BE** — bukan cek kategori part!
+> Kolom `BD` (`q_minifix`) dan `BE` (`q_dowel`) di sheet breakdown adalah nilai flag biner dari **master Part DB** per baris, bukan berdasarkan nama kategori (`kab`, `prt`, dll.).
+> - Nilai `0` → langsung kembalikan `0` (tidak ada hardware)
+> - Nilai `≠ 0` → jalankan kalkulasi auto berdasarkan dimensi L
 
 ```javascript
-// Konstanta dari Data Validation (hardcode atau fetch dari DB)
+// Konstanta dari Data Validation (via globalConstants DB)
 const fp = 800;  // jarak max engsel (mm)
-const fm = 32;   // modul minifix (mm)
-const fd = 32;   // modul dowel (mm) — sesuaikan jika berbeda
+const fm = 256;  // modul minifix (mm) — sesuai Excel actual
+const fd = 196;  // modul dowel (mm) — sesuai Excel actual
 
-// Kalkulasi engsel (baris Ref)
-const engsel = row.hasHinge
-  ? (row.J <= fp ? 2 : Math.ceil(row.J / fp)) * row.qty
-  : 0;
+// Minifix @ — Excel: =IF($BD172=0;0;IF($L172<150;2;ROUNDUP($L172/fm;0)*2))*$Q172
+const minifixFlag = Number(item.q_minifix) || 0; // BD column (0 = skip)
+let minifixTotal = 0;
+if (minifixFlag !== 0 && lVal > 0) {
+  const autoMinifix = lVal < 150 ? 2 : Math.ceil(lVal / fm) * 2;
+  minifixTotal = autoMinifix * qtyTotal;
+}
 
-// Kalkulasi minifix (baris prt)
-const minifix = row.hasMinifix
-  ? (row.L < 150 ? 2 : Math.ceil(row.L / fm) * 2) * row.qty
-  : 0;
+// Dowel @ — Excel: =IF($BE172=0;0;IF($L172<150;2;ROUNDUP($L172/fd;0)*2))*$Q172
+const dowelFlag = Number(item.q_dowel) || 0; // BE column (0 = skip)
+let dowelTotal = 0;
+if (dowelFlag !== 0 && lVal > 0) {
+  const autoDowel = lVal < 150 ? 2 : Math.ceil(lVal / fd) * 2;
+  dowelTotal = autoDowel * qtyTotal;
+}
 
-// Kalkulasi dowel
-const dowel = row.hasDowel
-  ? (row.L < 150 ? 2 : Math.ceil(row.L / fd) * 2) * row.qty
-  : 0;
+// jml siku (BU) dan jml screw (BV)
+const jmlSiku  = (Number(item.q_siku)  || 0) * qtyTotal;
+const jmlScrew = (Number(item.q_screw) || 0) * qtyTotal;
 ```
+
+
 
 #### Grup 7: Dimensi Aktual, M², M³, Harga (Kolom BK–BN, BO, BQ, BW–BX)
 
@@ -829,4 +843,55 @@ if (!currentGroup) {
 
 *Skill ini mencakup seluruh 84 kolom (A–CF) dari Breakdown Sheet baris 14–198.*  
 *Dibuat berdasarkan analisis dokumen: `breakdown_formula_analysis.md`*  
-*Terakhir diupdate: 2026-06-04 (Session fixes: rowsWithParent, isFinishingEmpty, IF alias dual-mode, ROUNDDOWN/ROUNDUP parser support, parent row sync & self-healing)*
+
+---
+
+## Update & Checkpoint Logika Project (Session 2026-06-09)
+
+Berikut adalah detail logic, relasi, dan aturan tambahan yang telah diimplementasikan dalam update terbaru (Progress 9 Juni 2026):
+
+### A. Sinkronisasi Dinamis & Resolusi Kategori Spek
+Aplikasi telah mengintegrasikan fungsi `syncCategoriesWithSpek` di [categorySync.js](file:///Applications/Arenga/vscode/breakdown_app/src/utils/categorySync.js) yang bertugas menghubungkan isian form Spesifikasi di Spek dengan data kategori material (`tf`, `te`, `lap_luar`, `lap_dalam`, `edg`).
+
+1. **Pemetaan Kunci (Mapping Maps)**:
+   * **`TF_MAP`**: Menghubungkan kode HPL numerik (`'1'`, `'11'`, `'2'`, `'22'`, dll.) ke alias variabel di Spek (`'lapisan1'`, `'kabinet1'`, `'lapisan2'`, `'kabinet2'`, dll.).
+   * **`TE_MAP`**: Menghubungkan kode edging numerik (`'11'`, `'9'`, `'1'`, `'2'`, dll.) ke alias variabel edging di Spek (`'edgingkab1'`, `'edginginv'`, `'edging1'`, `'edging2'`, dll.).
+2. **Auto-Thickness Calculation (Runtime)**:
+   * **Tebal Finishing**: Ketika nama finishing ter-resolve dari Spek (misalnya `HB_41130`), sistem secara otomatis menghitung ketebalan HPL/finishing via `getFinishingThickness()` berdasarkan properti tebal di data kategori atau fallback default (HPL = `1.0mm`, Decosheet/Duco/Melanor = `0.5mm`).
+   * **Tebal Edging**: Dihitung dinamis via `getEdgingThickness()` dengan mencocokkan nama edging dengan data stok fisik di database atau mengekstrak ukuran tebal langsung dari nama edging (misal: `"22X0.4"` $\rightarrow$ `0.4mm`, `"22x2"` $\rightarrow$ `2.0mm`).
+
+### B. Penyempurnaan Mesin Kalkulasi Formula (`calc.js`)
+Mesin parsing formula telah ditingkatkan kemampuannya untuk memproses rumus Excel yang lebih kompleks secara efisien:
+
+1. **Konversi IF Excel ke Ternary JS**:
+   * Ditambahkan fungsi `convertIFtoTernary(expr)` yang mendeteksi fungsi `=IF(cond, trueVal, falseVal)` (termasuk *nested* IF) dan menerjemahkannya ke format ternary JavaScript `(cond ? trueVal : falseVal)`.
+   * Mengonversi operator perbandingan Excel ke JS: `=` $\rightarrow$ `===` dan `<>` $\rightarrow$ `!==`.
+2. **Caching Fungsi Kompilasi (`compiledFnCache`)**:
+   * Evaluasi formula kini menggunakan cache berkapasitas 2000 entries untuk menyimpan hasil kompilasi `new Function()`. Ini meminimalisasi overhead performa saat memproses baris breakdown dalam jumlah besar.
+3. **Penyaringan Karakter Teraman**:
+   * Regex pembersih karakter diperluas untuk memperbolehkan operator ternary, pembanding, dan pemisah argument: `/[^0-9+\-*/()., A-Z_!?:=<>]/g`.
+4. **Auto-Derivation Tebal Layer Kosong**:
+   * Jika nilai kolom tebal finishing (`t_luar` atau `t_dalam`) kosong pada referensi sel, sistem secara otomatis menarik kode finishing dari `l_fin` / `d_fin`, menerjemahkannya ke nama HPL, lalu menghitung ketebalan fisiknya menggunakan `getFinishingThickness()`.
+
+### C. Mekanisme Shift & Penyesuaian Referensi Formula
+Untuk mendukung operasi modifikasi baris (tambah/hapus baris) pada visual grid breakdown, ditambahkan logika shifting:
+
+1. **Shifting Impor Template**:
+   * Fungsi `shiftTemplateFormulas` menggeser referensi baris (termasuk kolom koordinat `no`) saat modul template diimpor ke posisi tertentu di breakdown.
+2. **Penyesuaian Dinamis Baris Breakdown (`adjustFormulasOnShift`)**:
+   * Mengoreksi koordinat sel referensi (seperti `I15` menjadi `I16`) pada seluruh kolom formula (`p`, `l`, `t`, `jml`, `sub`, dll.) secara otomatis saat baris baru disisipkan (`shiftAmount > 0`) atau baris dihapus (`shiftAmount < 0`).
+   * Jika baris yang dirujuk oleh formula berada di dalam jangkauan baris yang dihapus, formula tersebut secara otomatis akan diubah menjadi error `#REF!`.
+
+### D. Optimasi Sinkronisasi Database PostgreSQL & Grid UI
+Mekanisme penyimpanan in-memory state ke database PostgreSQL telah dioptimalkan di [sync.js](file:///Applications/Arenga/vscode/breakdown_app/src/api/sync.js):
+
+1. **Penyelamatan Modul & Breakdown Rows**:
+   * Menyimpan semua baris breakdown per modul (termasuk baris parent/modul header dengan `is_parent: true`) melalui endpoint `/breakdown/bulk` untuk menjaga keutuhan struktur hierarki.
+   * Urutan baris disimpan dengan kolom `urutan` berbasis 0-index.
+2. **Evaluasi Statis Data Sebelum Simpan**:
+   * Nilai lookup tekstil (bahan, finishing, edging) di-resolve ke nama aslinya, ketebalan di-resolve ke angka statis, dan kuantitas hardware (`q_engsel`, `q_minifix`, `q_dowel`, dll.) dihitung secara statis sebelum dikirim ke DB agar query pencarian laporan menjadi sangat cepat.
+3. **Penyembunyian UI Lag**:
+   * Sinkronisasi data di latar belakang dilakukan secara debounced (1.5 detik) tanpa memperbarui state lokal React secara berulang. Ini menghindari re-render visual grid yang berat dan menjaga interaksi drafter tetap responsif.
+
+*Terakhir diupdate: 2026-06-09 (Checkpoint Versi 1.1: Kategori Spek, Mesin Formula Terkompilasi, Formula Reference Shifting, Bulk Sync PostgreSQL)*
+

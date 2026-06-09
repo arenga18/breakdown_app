@@ -26,7 +26,10 @@ export function getPartDefaultValue(compName, fieldKey) {
     q_anodize: 'q_anodize',
     q_dormec: 'q_dormec',
     q_rel: 'q_rel',
-    q_engsel: 'q_engsel'
+    q_engsel: 'q_engsel',
+    // BD/BE flag: 1 = has hardware (auto-calculate), 0 = skip
+    q_minifix: 'q_minifix',
+    q_dowel: 'q_dowel'
   };
 
   const partKey = mapping[fieldKey];
@@ -661,12 +664,18 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
     pVal, lVal, formattedTVal, descLap, tP1, tP2, tL1, tL2, qtyTotal
   );
 
-  // Task 2.2 — Auto-calc hardware Engsel & Minifix (Gap #5)
+  // Task 2.2 — Auto-calc hardware Engsel, Minifix, Dowel
+  // Logic mengikuti rumus Excel asli:
+  //   Minifix @ : =IF($BD172=0;0;IF($L172<150;2;ROUNDUP($L172/fm;0)*2))*$Q172
+  //   Dowel @   : =IF($BE172=0;0;IF($L172<150;2;ROUNDUP($L172/fd;0)*2))*$Q172
+  //   Engsel    : =IF($BI172=0;0;IF($J172<=fp;2;ROUNDUP($J172/fp;0)))*$Q172
+  // Kolom BD/BE/BI adalah flag biner dari master Part DB — bukan cek kategori.
+
   const catLower = (resolvedItem.cat || '').toLowerCase();
   const isPintu = catLower === 'pintu' || catLower === 'pintu kaca';
-  const isKabPanel = catLower === 'kab' || catLower === 'prt';
 
-  // Engsel: auto-calc dari tinggi pintu jika tidak diisi manual
+  // ── Engsel ──────────────────────────────────────────────────────────────────
+  // BD analog: field engsel (nama merk engsel) — jika kosong/0/'–' → tidak ada engsel
   const resolvedEngselName = resolvedItem.engsel !== undefined && resolvedItem.engsel !== null && resolvedItem.engsel !== ''
     ? resolvedItem.engsel
     : getPartDefaultValue(resolvedItem.komp, 'engsel');
@@ -683,37 +692,42 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
 
   let autoEngsel = 0;
   if (isPintu && pVal > 0) {
+    // =IF(J<=fp;2;ROUNDUP(J/fp;0))
     autoEngsel = pVal <= fp ? 2 : Math.ceil(pVal / fp);
   }
   const engselTotal = qEngselManual > 0
     ? qEngselManual * qtyTotal
     : (resolvedEngselName && resolvedEngselName !== '0' && resolvedEngselName !== '-') ? autoEngsel * qtyTotal : 0;
 
-  // Minifix: auto-calc dari lebar panel jika tidak diisi manual
-  const resolvedMinifix = resolvedItem.q_minifix !== undefined && resolvedItem.q_minifix !== null && resolvedItem.q_minifix !== ''
+  // ── Minifix @ ───────────────────────────────────────────────────────────────
+  // Setara Excel Kolom BD (flag: 0 = tidak ada, 1 = ada minifix)
+  // Rumus: =IF($BD172=0;0;IF($L172<150;2;ROUNDUP($L172/fm;0)*2))*$Q172
+  const rawMinifixFlag = resolvedItem.q_minifix !== undefined && resolvedItem.q_minifix !== null && resolvedItem.q_minifix !== ''
     ? resolvedItem.q_minifix
     : getPartDefaultValue(resolvedItem.komp, 'q_minifix');
-  const qMinifixManual = Number(resolvedMinifix) || 0;
-  let autoMinifix = 0;
-  if (isKabPanel && lVal > 0) {
-    autoMinifix = lVal < 150 ? 2 : Math.ceil(lVal / fm) * 2;
-  }
-  const minifixTotal = qMinifixManual > 0
-    ? qMinifixManual * qtyTotal
-    : autoMinifix * qtyTotal;
+  const minifixFlag = Number(rawMinifixFlag) || 0; // BD column: 0 = skip
 
-  // Dowel: auto-calc dari lebar panel dengan faktor fd (Excel = 196), bukan copy dari minifix
-  const resolvedDowel = resolvedItem.q_dowel !== undefined && resolvedItem.q_dowel !== null && resolvedItem.q_dowel !== ''
+  let minifixTotal = 0;
+  if (minifixFlag !== 0 && lVal > 0) {
+    // BD !== 0 → hitung: IF(L<150; 2; ROUNDUP(L/fm,0)*2)
+    const autoMinifix = lVal < 150 ? 2 : Math.ceil(lVal / fm) * 2;
+    minifixTotal = autoMinifix * qtyTotal;
+  }
+
+  // ── Dowel @ ─────────────────────────────────────────────────────────────────
+  // Setara Excel Kolom BE (flag: 0 = tidak ada, 1 = ada dowel)
+  // Rumus: =IF($BE172=0;0;IF($L172<150;2;ROUNDUP($L172/fd;0)*2))*$Q172
+  const rawDowelFlag = resolvedItem.q_dowel !== undefined && resolvedItem.q_dowel !== null && resolvedItem.q_dowel !== ''
     ? resolvedItem.q_dowel
     : getPartDefaultValue(resolvedItem.komp, 'q_dowel');
-  const qDowelManual = Number(resolvedDowel) || 0;
-  let autoDowel = 0;
-  if (isKabPanel && lVal > 0) {
-    autoDowel = lVal < 150 ? 2 : Math.ceil(lVal / fd) * 2;
+  const dowelFlag = Number(rawDowelFlag) || 0; // BE column: 0 = skip
+
+  let dowelTotal = 0;
+  if (dowelFlag !== 0 && lVal > 0) {
+    // BE !== 0 → hitung: IF(L<150; 2; ROUNDUP(L/fd,0)*2)
+    const autoDowel = lVal < 150 ? 2 : Math.ceil(lVal / fd) * 2;
+    dowelTotal = autoDowel * qtyTotal;
   }
-  const dowelTotal = qDowelManual > 0
-    ? qDowelManual * qtyTotal
-    : autoDowel * qtyTotal;
 
   // Rel
   const resolvedRelName = resolvedItem.rel !== undefined && resolvedItem.rel !== null && resolvedItem.rel !== ''

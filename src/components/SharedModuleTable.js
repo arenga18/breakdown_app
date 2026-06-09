@@ -576,40 +576,78 @@ const SharedModuleTableRow = React.memo(React.forwardRef(({
       </td>
       <td style={cellStyle('Y', { background: '#f3e8ff' })} onMouseDown={(e) => handleMD(e, 'Y')}>{getCellRenderer(item, rowIdx, 't_dalam')}</td>
       <td className="has-dropdown" style={cellStyle('Z', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'Z')}>
-        <SearchableCell
-          value={item.edg_p1 || ''}
-          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.p1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
-          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-          onSelect={v => onUpdateRow(rowIdx, 'edg_p1', v)}
-          isRefMode={isRefMode}
-        />
+        {(() => {
+          // item.edg_p1 can be a raw formula from partsData (e.g. =IF(la...)).
+          // Resolve it via specAliases first, then lookup edging name from the resulting code.
+          const rawEdgP1 = item.edg_p1;
+          const resolvedP1Code = (typeof rawEdgP1 === 'string' && rawEdgP1.startsWith('='))
+            ? String(evaluateFormula(rawEdgP1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases) ?? '').trim()
+            : String(rawEdgP1 ?? '').trim();
+          const resolvedP1Name = resolveEdgingFromCode(resolvedP1Code || evaluateFormula(item.p1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || []);
+          return (
+            <SearchableCell
+              value={resolvedP1Code || rawEdgP1 || ''}
+              resolvedValue={resolvedP1Name}
+              options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+              onSelect={v => onUpdateRow(rowIdx, 'edg_p1', v)}
+              isRefMode={isRefMode}
+            />
+          );
+        })()}
       </td>
       <td className="has-dropdown" style={cellStyle('AA', { background: '#dcfce7' })} onMouseDown={(e) => handleMD(e, 'AA')}>
-        <SearchableCell
-          value={item.edg_p2 || ''}
-          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.p2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
-          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-          onSelect={v => onUpdateRow(rowIdx, 'edg_p2', v)}
-          isRefMode={isRefMode}
-        />
+        {(() => {
+          const rawEdgP2 = item.edg_p2;
+          const resolvedP2Code = (typeof rawEdgP2 === 'string' && rawEdgP2.startsWith('='))
+            ? String(evaluateFormula(rawEdgP2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases) ?? '').trim()
+            : String(rawEdgP2 ?? '').trim();
+          const resolvedP2Name = resolveEdgingFromCode(resolvedP2Code || evaluateFormula(item.p2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || []);
+          return (
+            <SearchableCell
+              value={resolvedP2Code || rawEdgP2 || ''}
+              resolvedValue={resolvedP2Name}
+              options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+              onSelect={v => onUpdateRow(rowIdx, 'edg_p2', v)}
+              isRefMode={isRefMode}
+            />
+          );
+        })()}
       </td>
       <td className="has-dropdown" style={cellStyle('AB', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AB')}>
-        <SearchableCell
-          value={item.edg_l1 || ''}
-          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.l1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
-          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-          onSelect={v => onUpdateRow(rowIdx, 'edg_l1', v)}
-          isRefMode={isRefMode}
-        />
+        {(() => {
+          const rawEdgL1 = item.edg_l1;
+          const resolvedL1Code = (typeof rawEdgL1 === 'string' && rawEdgL1.startsWith('='))
+            ? String(evaluateFormula(rawEdgL1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases) ?? '').trim()
+            : String(rawEdgL1 ?? '').trim();
+          const resolvedL1Name = resolveEdgingFromCode(resolvedL1Code || evaluateFormula(item.l1, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || []);
+          return (
+            <SearchableCell
+              value={resolvedL1Code || rawEdgL1 || ''}
+              resolvedValue={resolvedL1Name}
+              options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+              onSelect={v => onUpdateRow(rowIdx, 'edg_l1', v)}
+              isRefMode={isRefMode}
+            />
+          );
+        })()}
       </td>
       <td className="has-dropdown" style={cellStyle('AC', { background: '#fef9c3' })} onMouseDown={(e) => handleMD(e, 'AC')}>
-        <SearchableCell
-          value={item.edg_l2 || ''}
-          resolvedValue={resolveEdgingFromCode(evaluateFormula(item.l2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || [])}
-          options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
-          onSelect={v => onUpdateRow(rowIdx, 'edg_l2', v)}
-          isRefMode={isRefMode}
-        />
+        {(() => {
+          const rawEdgL2 = item.edg_l2;
+          const resolvedL2Code = (typeof rawEdgL2 === 'string' && rawEdgL2.startsWith('='))
+            ? String(evaluateFormula(rawEdgL2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases) ?? '').trim()
+            : String(rawEdgL2 ?? '').trim();
+          const resolvedL2Name = resolveEdgingFromCode(resolvedL2Code || evaluateFormula(item.l2, rowsWithParent, spec, parent, 0, setupItems, {}, specAliases), item.cat, spec?.categories || []);
+          return (
+            <SearchableCell
+              value={resolvedL2Code || rawEdgL2 || ''}
+              resolvedValue={resolvedL2Name}
+              options={['', ...(edgOptions.length ? edgOptions : ['Edg_Décor_1723_B', 'Edg_DSS_00206_SM', 'Melanor'])]}
+              onSelect={v => onUpdateRow(rowIdx, 'edg_l2', v)}
+              isRefMode={isRefMode}
+            />
+          );
+        })()}
       </td>
       {(() => {
         const calc = calcResult;

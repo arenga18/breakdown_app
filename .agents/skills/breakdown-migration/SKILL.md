@@ -1,7 +1,7 @@
 # Skill: Cabinet Breakdown Formula Migration
 **Untuk**: Google Antigravity  
 **Domain**: Furniture Manufacturing / Interior Production  
-**Versi**: 1.1 (Checkpoint 9 Juni 2026)  
+**Versi**: 1.2 (Checkpoint 9 Juni 2026 - Hardware & Edging Formula Fixes)  
 **Bahasa**: Bahasa Indonesia / English (bilingual)
 
 ---
@@ -893,5 +893,15 @@ Mekanisme penyimpanan in-memory state ke database PostgreSQL telah dioptimalkan 
 3. **Penyembunyian UI Lag**:
    * Sinkronisasi data di latar belakang dilakukan secara debounced (1.5 detik) tanpa memperbarui state lokal React secara berulang. Ini menghindari re-render visual grid yang berat dan menjaga interaksi drafter tetap responsif.
 
-*Terakhir diupdate: 2026-06-09 (Checkpoint Versi 1.1: Kategori Spek, Mesin Formula Terkompilasi, Formula Reference Shifting, Bulk Sync PostgreSQL)*
+### E. Resolusi & Evaluasi Formula Edging pada UI Grid
+Pada kolom **Edge P1/P2/L1/L2** (`edg_p1`, `edg_p2`, `edg_l1`, `edg_l2`), data parts default dapat berisi formula Excel mentah seperti `=IF(lap_inv_kab=Polos,9,11)`.
+* **Sebelumnya**: Menampilkan formula mentah di dalam dropdown / sel edit.
+* **Perbaikan**: Menggunakan `evaluateFormula` terlebih dahulu pada nilai formula mentah `edg_*` untuk menghasilkan kode edging yang ter-resolve (misalnya `9` atau `11`), lalu mencari nama edging fisik yang sesuai via `resolveEdgingFromCode()`. Hal ini menjamin dropdown UI menampilkan data tekstual yang bersih dan valid bagi drafter.
 
+### F. Logic Gerbang Flag Biner Hardware (Minifix & Dowel)
+Auto-calculation hardware minifix dan dowel disesuaikan untuk merefleksikan logika spreadsheet Excel asli:
+* **Minifix @**: `=IF($BD172=0;0;IF($L172<150;2;((ROUNDUP($L172/fm;0)*2))))*$Q172`
+* **Dowel @**: `=IF($BE172=0;0;IF($L172<150;2;((ROUNDUP($L172/fd;0)*2))))*$Q172`
+* **Penyelesaian**: Menggunakan flag `q_minifix` dan `q_dowel` dari master database part sebagai filter/gate awal (jika `0` / skip, skip kalkulasi; jika `1` / aktif, jalankan kalkulasi berbasis lebar panel `L` dan pembagi masing-masing `fm` / `fd`). Ini menggantikan pengecekan berbasis kategori (`isKabPanel`) yang sebelumnya kurang akurat.
+
+*Terakhir diupdate: 2026-06-09 (Checkpoint Versi 1.2: Kategori Spek, Mesin Formula Terkompilasi, Formula Reference Shifting, Bulk Sync PostgreSQL, Resolusi Formula Edging, Gerbang Flag Minifix/Dowel)*

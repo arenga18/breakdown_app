@@ -3,31 +3,31 @@ import { buildAliasMap, resolveAlias } from '../utils/resolveAlias';
 import { s, Modal, FormGroup, FormRow } from './UI';
 
 const COLUMNS = [
-  { key: 'val', label: 'Val', width: 60, type: 'number' },
+  { key: 'val', label: 'Val', width: 60, type: 'text' },
   { key: 'name', label: 'Name', width: 250, type: 'text', bold: true },
   { key: 'code', label: 'Category', width: 100, type: 'text' },
   { key: 'ks', label: 'KS', width: 60, type: 'text' },
-  { key: 'jml_sub', label: 'Jml Sub', width: 60, type: 'number' },
+  { key: 'jml_sub', label: 'Jml Sub', width: 60, type: 'text' },
   { key: 'bhn', label: 'Bhn', width: 80, type: 'text' },
-  { key: 't', label: 'T', width: 50, type: 'number' },
+  { key: 't', label: 'T', width: 50, type: 'text' },
   { key: 'minifix', label: 'Minifix', width: 140, type: 'text' },
   { key: 'dowel', label: 'Dowel', width: 140, type: 'text' },
   { key: 'tipe_siku', label: 'Tipe Siku', width: 150, type: 'text' },
-  { key: 'q_siku', label: '@Siku', width: 70, type: 'number' },
+  { key: 'q_siku', label: '@Siku', width: 70, type: 'text' },
   { key: 'tipe_screw', label: 'Tipe Screw', width: 150, type: 'text' },
-  { key: 'q_screw', label: '@Screw', width: 70, type: 'number' },
-  { key: 'l', label: 'Face L', width: 60, type: 'number' },
-  { key: 'd', label: 'Face D', width: 60, type: 'number' },
-  { key: 'p1', label: 'Edge P1', width: 60, type: 'number' },
-  { key: 'p2', label: 'Edge P2', width: 60, type: 'number' },
-  { key: 'l1', label: 'Edge L1', width: 60, type: 'number' },
-  { key: 'l2', label: 'Edge L2', width: 60, type: 'number' },
+  { key: 'q_screw', label: '@Screw', width: 70, type: 'text' },
+  { key: 'l', label: 'Face L', width: 60, type: 'text' },
+  { key: 'd', label: 'Face D', width: 60, type: 'text' },
+  { key: 'p1', label: 'Edge P1', width: 60, type: 'text' },
+  { key: 'p2', label: 'Edge P2', width: 60, type: 'text' },
+  { key: 'l1', label: 'Edge L1', width: 60, type: 'text' },
+  { key: 'l2', label: 'Edge L2', width: 60, type: 'text' },
   { key: 'rel', label: 'Rel', width: 120, type: 'text' },
   { key: 'engsel', label: 'Engsel', width: 180, type: 'text' },
   { key: 'anodize', label: 'Anodize', width: 120, type: 'text' },
-  { key: 'q_anodize', label: '@Ano', width: 90, type: 'number' },
-  { key: 'p_val', label: 'P (Val)', width: 70, type: 'number' },
-  { key: 'l_val', label: 'L (Val)', width: 70, type: 'number' },
+  { key: 'q_anodize', label: '@Ano', width: 90, type: 'text' },
+  { key: 'p_val', label: 'P (Val)', width: 70, type: 'text' },
+  { key: 'l_val', label: 'L (Val)', width: 70, type: 'text' },
 ];
 
 const ROW_HEIGHT = 32;
@@ -215,16 +215,12 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
     return data.filter(p => (p.name || '').toLowerCase().includes(q));
   }, [data, filter]);
 
-  const numericFields = useMemo(() => new Set(
-    COLUMNS.filter(c => c.type === 'number').map(c => c.key)
-  ), []);
-
   const handleCommit = useCallback((dataIdx, key, val) => {
     const next = [...data];
-    next[dataIdx] = { ...next[dataIdx], [key]: numericFields.has(key) ? (parseFloat(val) || 0) : val };
+    next[dataIdx] = { ...next[dataIdx], [key]: val === undefined || val === null ? '' : String(val).trim() };
     onChange(next);
     setEditCell(null);
-  }, [data, onChange, numericFields]);
+  }, [data, onChange]);
 
   const handleDelete = useCallback((dataIdx) => {
     onChange(data.filter((_, i) => i !== dataIdx));
@@ -236,15 +232,29 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
 
   function save() {
     if (!form.name) return;
-    const num = v => { const p = parseFloat(v); return isNaN(p) ? 0 : p; };
+    const cleanStr = v => v === undefined || v === null ? '' : String(v).trim();
     const obj = {
       ...form,
-      val: num(form.val), jml_sub: num(form.jml_sub), t: num(form.t),
-      minifix: form.minifix, dowel: form.dowel,
-      l: num(form.l), d: num(form.d), p1: num(form.p1), p2: num(form.p2),
-      l1: num(form.l1), l2: num(form.l2), q_siku: num(form.q_siku),
-      q_screw: num(form.q_screw), q_anodize: num(form.q_anodize),
-      p_val: num(form.p_val), l_val: num(form.l_val),
+      val: cleanStr(form.val), 
+      jml_sub: cleanStr(form.jml_sub), 
+      t: cleanStr(form.t),
+      minifix: cleanStr(form.minifix), 
+      dowel: cleanStr(form.dowel),
+      l: cleanStr(form.l), 
+      d: cleanStr(form.d), 
+      p1: cleanStr(form.p1), 
+      p2: cleanStr(form.p2),
+      l1: cleanStr(form.l1), 
+      l2: cleanStr(form.l2), 
+      q_siku: cleanStr(form.q_siku),
+      q_screw: cleanStr(form.q_screw), 
+      q_anodize: cleanStr(form.q_anodize),
+      p_val: cleanStr(form.p_val), 
+      l_val: cleanStr(form.l_val),
+      bhn: cleanStr(form.bhn),
+      ks: cleanStr(form.ks),
+      code: cleanStr(form.code),
+      name: cleanStr(form.name),
     };
     onChange([...data, obj]);
     setModal(false);
@@ -287,13 +297,13 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
 
       <Modal open={modal} onClose={() => setModal(false)} title="Tambah Part">
         <FormRow>
-          <FormGroup label="Val"><input style={s.input} type="number" value={form.val} onChange={f('val')} /></FormGroup>
+          <FormGroup label="Val"><input style={s.input} type="text" value={form.val} onChange={f('val')} /></FormGroup>
           <FormGroup label="Category (Code)"><input style={s.input} value={form.code} onChange={f('code')} /></FormGroup>
         </FormRow>
         <FormGroup label="Nama Part (Komponen)"><input style={s.input} value={form.name} onChange={f('name')} /></FormGroup>
         <FormRow>
           <FormGroup label="KS (Kode Spek)"><input style={s.input} value={form.ks} onChange={f('ks')} /></FormGroup>
-          <FormGroup label="Jml Sub"><input style={s.input} type="number" value={form.jml_sub} onChange={f('jml_sub')} /></FormGroup>
+          <FormGroup label="Jml Sub"><input style={s.input} type="text" value={form.jml_sub} onChange={f('jml_sub')} /></FormGroup>
         </FormRow>
         <div style={{ padding: '8px 0', borderTop: '1px solid #eee', marginTop: 10, fontWeight: 600, fontSize: 13, color: '#3b82f6' }}>1. Hardware & Fitting</div>
         <FormRow>
@@ -302,11 +312,11 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
         </FormRow>
         <FormRow>
           <FormGroup label="Tipe Siku"><input style={s.input} value={form.tipe_siku} onChange={f('tipe_siku')} /></FormGroup>
-          <FormGroup label="@ Jumlah Siku"><input style={s.input} type="number" value={form.q_siku} onChange={f('q_siku')} /></FormGroup>
+          <FormGroup label="@ Jumlah Siku"><input style={s.input} type="text" value={form.q_siku} onChange={f('q_siku')} /></FormGroup>
         </FormRow>
         <FormRow>
           <FormGroup label="Tipe Screw"><input style={s.input} value={form.tipe_screw} onChange={f('tipe_screw')} /></FormGroup>
-          <FormGroup label="@ Jumlah Screw"><input style={s.input} type="number" value={form.q_screw} onChange={f('q_screw')} /></FormGroup>
+          <FormGroup label="@ Jumlah Screw"><input style={s.input} type="text" value={form.q_screw} onChange={f('q_screw')} /></FormGroup>
         </FormRow>
         <FormRow>
           <FormGroup label="Rel"><input style={s.input} value={form.rel} onChange={f('rel')} /></FormGroup>
@@ -314,29 +324,29 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
         </FormRow>
         <div style={{ padding: '8px 0', borderTop: '1px solid #eee', marginTop: 10, fontWeight: 600, fontSize: 13, color: '#10b981' }}>2. Finishing & Edging</div>
         <FormRow>
-          <FormGroup label="L (Face 1)"><input style={s.input} type="number" value={form.l} onChange={f('l')} /></FormGroup>
-          <FormGroup label="D (Face 2)"><input style={s.input} type="number" value={form.d} onChange={f('d')} /></FormGroup>
+          <FormGroup label="L (Face 1)"><input style={s.input} type="text" value={form.l} onChange={f('l')} /></FormGroup>
+          <FormGroup label="D (Face 2)"><input style={s.input} type="text" value={form.d} onChange={f('d')} /></FormGroup>
         </FormRow>
         <FormRow>
-          <FormGroup label="P1 (Edge)"><input style={s.input} type="number" value={form.p1} onChange={f('p1')} /></FormGroup>
-          <FormGroup label="P2 (Edge)"><input style={s.input} type="number" value={form.p2} onChange={f('p2')} /></FormGroup>
+          <FormGroup label="P1 (Edge)"><input style={s.input} type="text" value={form.p1} onChange={f('p1')} /></FormGroup>
+          <FormGroup label="P2 (Edge)"><input style={s.input} type="text" value={form.p2} onChange={f('p2')} /></FormGroup>
         </FormRow>
         <FormRow>
-          <FormGroup label="L1 (Edge)"><input style={s.input} type="number" value={form.l1} onChange={f('l1')} /></FormGroup>
-          <FormGroup label="L2 (Edge)"><input style={s.input} type="number" value={form.l2} onChange={f('l2')} /></FormGroup>
+          <FormGroup label="L1 (Edge)"><input style={s.input} type="text" value={form.l1} onChange={f('l1')} /></FormGroup>
+          <FormGroup label="L2 (Edge)"><input style={s.input} type="text" value={form.l2} onChange={f('l2')} /></FormGroup>
         </FormRow>
         <div style={{ padding: '8px 0', borderTop: '1px solid #eee', marginTop: 10, fontWeight: 600, fontSize: 13, color: '#f59e0b' }}>3. Dimensi & Lainnya</div>
         <FormRow>
-          <FormGroup label="P Val"><input style={s.input} type="number" value={form.p_val} onChange={f('p_val')} /></FormGroup>
-          <FormGroup label="L Val"><input style={s.input} type="number" value={form.l_val} onChange={f('l_val')} /></FormGroup>
+          <FormGroup label="P Val"><input style={s.input} type="text" value={form.p_val} onChange={f('p_val')} /></FormGroup>
+          <FormGroup label="L Val"><input style={s.input} type="text" value={form.l_val} onChange={f('l_val')} /></FormGroup>
         </FormRow>
         <FormRow>
           <FormGroup label="Anodize"><input style={s.input} value={form.anodize} onChange={f('anodize')} /></FormGroup>
-          <FormGroup label="@ Jml Anodize"><input style={s.input} type="number" value={form.q_anodize} onChange={f('q_anodize')} /></FormGroup>
+          <FormGroup label="@ Jml Anodize"><input style={s.input} type="text" value={form.q_anodize} onChange={f('q_anodize')} /></FormGroup>
         </FormRow>
         <FormRow>
           <FormGroup label="Bhn"><input style={s.input} value={form.bhn} onChange={f('bhn')} /></FormGroup>
-          <FormGroup label="T (Tebal)"><input style={s.input} type="number" value={form.t} onChange={f('t')} /></FormGroup>
+          <FormGroup label="T (Tebal)"><input style={s.input} type="text" value={form.t} onChange={f('t')} /></FormGroup>
         </FormRow>
         <div style={s.modalActions}>
           <button style={s.btn} onClick={() => setModal(false)}>Batal</button>

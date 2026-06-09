@@ -31,8 +31,14 @@ function translateExcelFormula(formulaClean) {
   f = f.replace(/lap_inv_kab=0/g, 'lap_inv_kab=Polos');
 
   // Replace relative cell coordinates from same row
+  f = f.replace(/I\d+/g, 'bhn');
+  f = f.replace(/J\d+/g, 't');
   f = f.replace(/W\d+/g, 'l');
   f = f.replace(/X\d+/g, 'd');
+  f = f.replace(/Y\d+/g, 'p1');
+  f = f.replace(/Z\d+/g, 'p2');
+  f = f.replace(/AA\d+/g, 'l1');
+  f = f.replace(/AB\d+/g, 'l2');
 
   return '=' + f;
 }
@@ -75,6 +81,14 @@ async function main() {
     'Spek!A36': 'lap_inv_kab',
     'Spek!$A$37': 'lap_pintu_mlp',
     'Spek!A37': 'lap_pintu_mlp',
+
+    // HPL Thickness references to friendly variables
+    'Spek!$E$48': 'lapisan1',
+    'Spek!E48': 'lapisan1',
+    'Spek!$E$52': 'lapisan3',
+    'Spek!E52': 'lapisan3',
+    'Spek!$E$56': 'lapisan5',
+    'Spek!E56': 'lapisan5',
   };
 
   const parts = [];
@@ -246,6 +260,17 @@ async function main() {
     if (part.jml === undefined || part.jml === null || part.jml === '') part.jml = 1;
     if (part.opt === undefined || part.opt === null || part.opt === '') part.opt = 1;
 
+    // Convert all fields to string (except spekRefs)
+    Object.keys(part).forEach(key => {
+      if (key !== 'spekRefs') {
+        if (part[key] === undefined || part[key] === null) {
+          part[key] = '';
+        } else {
+          part[key] = String(part[key]);
+        }
+      }
+    });
+
     parts.push(part);
   }
 
@@ -271,7 +296,7 @@ async function main() {
           String(p.lap_luar || ''),
           String(p.edg_p1 || p.edg || ''),
           String(p.val || ''),
-          typeof p.opt === 'number' ? p.opt : 0,
+          parseInt(p.opt, 10) || 0,
           JSON.stringify({
             opt: p.opt, type: p.type, name: p.name, val: p.val, code: p.code, jml: p.jml, bhn: p.bhn, t: p.t,
             tipe_siku: p.tipe_siku, tipe_screw: p.tipe_screw,

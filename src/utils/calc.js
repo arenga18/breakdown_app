@@ -31,7 +31,7 @@ function convertIFtoTernary(expr) {
   }
   // Extract IF( ... ) content
   const inner = expr.slice(startIdx + 3, endIdx);
-  const parts = splitTopLevel(inner, ',');
+  const parts = splitTopLevel(inner);
   if (parts.length === 3) {
     const cond = convertIFtoTernary(parts[0].trim())
       .replace(/<>/g, '!==')
@@ -44,14 +44,14 @@ function convertIFtoTernary(expr) {
   return expr;
 }
 
-/** Split by comma only at top level (not inside parentheses) */
-function splitTopLevel(str, sep) {
+/** Split by comma or semicolon only at top level (not inside parentheses) */
+function splitTopLevel(str) {
   const parts = [];
   let depth = 0, start = 0;
   for (let i = 0; i < str.length; i++) {
     if (str[i] === '(') depth++;
     else if (str[i] === ')') depth--;
-    else if (depth === 0 && str[i] === sep) {
+    else if (depth === 0 && (str[i] === ',' || str[i] === ';')) {
       parts.push(str.slice(start, i));
       start = i + 1;
     }
@@ -177,7 +177,7 @@ export function evaluateFormula(formula, rows, spec = {}, currentParent = {}, _d
     // Convert Excel IF(cond, trueVal, falseVal) to JS ternary (cond ? trueVal : falseVal)
     expression = convertIFtoTernary(expression);
 
-    const sanitized = expression.replace(/[^0-9+\-*/()., A-Z_!?:=<>]/g, '');
+    const sanitized = expression.replace(/[^0-9+\-*/().,; A-Z_!?:=<>]/g, '');
     if (!sanitized.trim()) return 0;
 
     // Retrieve or compile function (cache by sanitized expression)

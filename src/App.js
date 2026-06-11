@@ -74,7 +74,7 @@ export default function App() {
           api.get('/settings/tplSections').catch(() => null),
           api.get('/settings/modulMasterData').catch(() => null),
           api.get('/setup-items').catch(() => null),
-          api.get('/parts?limit=500').catch(() => null),
+          api.get('/parts?limit=2000').catch(() => null),
           api.get('/stock?limit=9999').catch(() => null),
           api.get('/projects?limit=500').catch(() => null),
           api.get('/moduls?limit=500').catch(() => null),
@@ -130,7 +130,7 @@ export default function App() {
           dbState.parts = rawParts.map(p => {
             let extra = {};
             if (p.keterangan) {
-              try { extra = JSON.parse(p.keterangan); } catch (_) {}
+              try { extra = JSON.parse(p.keterangan); } catch (_) { }
             }
             const def = defaultPartMap[p.val];
             return {
@@ -279,7 +279,7 @@ export default function App() {
 
         const prev = lastSyncedState.current[key];
         const next = stateRef.current[key];
-        
+
         console.log(`⏳ Debounced sync running for "${key}"...`);
         syncInProgress.current[key] = true;
         try {
@@ -313,7 +313,7 @@ export default function App() {
   const syncedCategories = React.useMemo(() => {
     const stock = state.stock || [];
     const categories = state.categories || [];
-    
+
     const hplStockItems = stock
       .filter(s => (s.kat || '').toLowerCase() === 'hpl')
       .map((s, idx) => ({
@@ -322,6 +322,11 @@ export default function App() {
         name: s.nama || '',
         tebal: parseFloat(s.tebal) || 0.0
       }));
+
+    hplStockItems.push(
+      { code: '2', val: hplStockItems.length + 1, name: '(WY_5216_D(V) rangka......+Aica)', tebal: 1.0 },
+      { code: '4', val: hplStockItems.length + 2, name: '(L-FA_0206_AP rangka......+Aica)', tebal: 1.0 }
+    );
 
     const edgStockItems = stock
       .filter(s => ['edg', 'edging'].includes((s.kat || '').toLowerCase()))

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { api } from '../api/client';
 import { s, Modal, FormGroup, FormRow, Badge } from './UI';
 import SpekPage from './SpekPage';
 import BreakdownPage from './BreakdownPage';
@@ -35,6 +36,7 @@ export default function ProjectPage({
   subTab
 }) {
   const [highlightedSpekField, setHighlightedSpekField] = useState(null);
+  const [creating, setCreating] = useState(false);
 
   const activeId = projectId;
   const stepVal = step || 'spek';
@@ -42,11 +44,12 @@ export default function ProjectPage({
 
   const activeProject = projects.find(p => String(p.id) === String(activeId));
 
+  // Guard: redirect to list if no project found and we're not in the middle of creating one
   React.useEffect(() => {
-    if (activeId && !activeProject) {
+    if (activeId && !activeProject && !creating) {
       window.location.hash = '#/project';
     }
-  }, [activeId, activeProject]);
+  }, [activeId, activeProject, creating]);
 
   const changeRoute = (newStep, newSubTab) => {
     window.location.hash = buildHashRoute({
@@ -80,8 +83,8 @@ export default function ProjectPage({
 
   // Merge globalConstants, stock, and categories into spec so evaluateFormula/calcBreakdownItem can access them
   const activeSpecWithGC = React.useMemo(
-    () => ({ ...activeSpec, globalConstants, stock, categories: syncedCategories }),
-    [activeSpec, globalConstants, stock, syncedCategories]
+    () => ({ ...activeSpec, id: activeProject?.id, globalConstants, stock, categories: syncedCategories }),
+    [activeSpec, activeProject?.id, globalConstants, stock, syncedCategories]
   );
   const aliasMap = React.useMemo(() => buildAliasMap(activeSpecWithGC), [activeSpecWithGC]);
   const resolvedParts = React.useMemo(() => {
@@ -100,21 +103,47 @@ export default function ProjectPage({
     });
   }, [parts, aliasMap]);
 
-  function createProject() {
-    const newProj = {
-      id: Date.now(),
-      name: 'Project Baru',
-      client: '',
-      speks: [{ tanggal: new Date().toISOString().slice(0, 10), norekap: '', estimator: '', koord: '', kontrak: '', nip: '', produk: '', proyek: '', statusPend: false, statusTidakPend: false, statusAntiRayap: false, statusTidakAntiRayap: false, vals: { ...defaultSpekVals }, modulRefs: [] }],
-      breakdown: []
+  async function createProject() {
+    if (creating) return;
+    setCreating(true);
+    const spekData = {
+      tanggal: new Date().toISOString().slice(0, 10),
+      norekap: '', estimator: '', koord: '', kontrak: '', nip: '',
+      produk: '', proyek: '',
+      statusPend: false, statusTidakPend: false,
+      statusAntiRayap: false, statusTidakAntiRayap: false,
+      vals: { ...defaultSpekVals }, modulRefs: []
     };
-    onChange([...projects, newProj]);
-    window.location.hash = buildHashRoute({
-      page: 'project',
-      projectId: newProj.id,
-      step: 'spek',
-      subTab: 'breakdown'
-    });
+    try {
+      // POST directly to DB to get the real UUID immediately —
+      // this avoids navigating with a temp ID that later gets swapped,
+      // which was causing the spurious redirect back to the project list.
+      const res = await api.post('/projects', {
+        name: 'Project Baru',
+        client: '',
+        status: 'active',
+        speks: spekData
+      });
+      const newProj = {
+        id: res.id,
+        name: res.name || 'Project Baru',
+        client: res.client || '',
+        speks: [spekData],
+        breakdown: []
+      };
+      onChange([...projects, newProj]);
+      window.location.hash = buildHashRoute({
+        page: 'project',
+        projectId: res.id,
+        step: 'spek',
+        subTab: 'breakdown'
+      });
+    } catch (err) {
+      console.error('Gagal membuat project:', err);
+      alert('Gagal membuat project baru. Coba lagi.');
+    } finally {
+      setCreating(false);
+    }
   }
 
   function updateProject(updated) {
@@ -134,7 +163,9 @@ export default function ProjectPage({
       <div style={{ padding: 24, flex: 1, overflowY: 'auto' }}>
         <div style={s.pageHeader}>
           <span style={s.pageTitle}>Daftar Project</span>
-          <button style={s.btnPrimary} onClick={createProject}>+ Project Baru</button>
+          <button style={{ ...s.btnPrimary, opacity: creating ? 0.6 : 1, cursor: creating ? 'wait' : 'pointer' }} onClick={createProject} disabled={creating}>
+            {creating ? '⏳ Membuat...' : '+ Project Baru'}
+          </button>
         </div>
 
         <div style={s.tableWrap}>
@@ -296,6 +327,7 @@ export default function ProjectPage({
         )}
         {stepVal === 'rekap' && (
           <ReportPage
+            projectId={activeProject.id}
             breakdown={activeProject.breakdown}
             parts={parts}
             stock={stock}

@@ -7,14 +7,15 @@ import { calculateBpbRows } from '../utils/bpbCalc';
 import bomSettingTemplate from '../utils/bom_setting_full.json';
 import { calculateBomRows } from '../utils/bomCalc';
 import VariablesPanel from './VariablesPanel';
+import { api } from '../api/client';
 
 
 const EditableDiv = React.forwardRef(({ children, style, compact, ...props }, ref) => (
-  <div 
+  <div
     ref={ref}
-    contentEditable 
-    suppressContentEditableWarning 
-    style={{ outline: 'none', minHeight: compact ? '12px' : '18px', display: 'inline-block', minWidth: '100%', ...style }} 
+    contentEditable
+    suppressContentEditableWarning
+    style={{ outline: 'none', minHeight: compact ? '12px' : '18px', display: 'inline-block', minWidth: '100%', ...style }}
     {...props}
   >
     {children}
@@ -362,7 +363,7 @@ const RekapCheckRow = ({ checked, onClick, children }) => (
     <td style={{ border: REKAP_BORDER, width: 24, textAlign: 'center', padding: '4px 6px', fontWeight: 700 }}>
       {checked ? '√' : ''}
     </td>
-    <td style={{ border: REKAP_BORDER, padding: '4px 8px' }}>{children}</td>
+    <td style={{ border: REKAP_BORDER, padding: '2px 4px' }}>{children}</td>
   </tr>
 );
 
@@ -390,14 +391,14 @@ const AntiRayapBox = ({ antiRayap, setAntiRayap }) => (
       </tr>
       <tr>
         <td
-          style={{ border: REKAP_BORDER, width: '50%', padding: '4px 8px', cursor: 'pointer' }}
+          style={{ border: REKAP_BORDER, width: '50%', padding: '2px 4px', cursor: 'pointer' }}
           onClick={() => setAntiRayap(0)}
         >
           <span style={{ display: 'inline-block', width: 16, fontWeight: 700 }}>{antiRayap === 0 ? '√' : ''}</span>
           YA
         </td>
         <td
-          style={{ border: REKAP_BORDER, width: '50%', padding: '4px 8px', cursor: 'pointer' }}
+          style={{ border: REKAP_BORDER, width: '50%', padding: '2px 4px', cursor: 'pointer' }}
           onClick={() => setAntiRayap(1)}
         >
           <span style={{ display: 'inline-block', width: 16, fontWeight: 700 }}>{antiRayap === 1 ? '√' : ''}</span>
@@ -594,7 +595,7 @@ const BpbHeader = ({ spec = {}, componentCount = 0 }) => {
           <tr>
             <td colSpan={4}></td>
             <td style={{ fontWeight: 'bold', fontSize: 12, width: '150px', padding: '4px 0' }}>JUMLAH KOMPONEN :</td>
-            <td style={{ fontWeight: 'bold', fontSize: 13, width: '120px', padding: '4px 8px', borderBottom: '1px dashed #ccc', textAlign: 'left', color: '#16a34a' }}>
+            <td style={{ fontWeight: 'bold', fontSize: 13, width: '120px', padding: '2px 4px', borderBottom: '1px dashed #ccc', textAlign: 'left', color: '#16a34a' }}>
               {componentCount}
             </td>
           </tr>
@@ -673,7 +674,7 @@ const BomHeader = ({ spec = {}, componentCount = 0 }) => {
           <tr>
             <td colSpan={4}></td>
             <td style={{ fontWeight: 'bold', fontSize: 12, width: '150px', padding: '4px 0' }}>JUMLAH KOMPONEN :</td>
-            <td style={{ fontWeight: 'bold', fontSize: 13, width: '120px', padding: '4px 8px', borderBottom: '1px dashed #ccc', textAlign: 'left', color: '#16a34a' }}>
+            <td style={{ fontWeight: 'bold', fontSize: 13, width: '120px', padding: '2px 4px', borderBottom: '1px dashed #ccc', textAlign: 'left', color: '#16a34a' }}>
               {componentCount}
             </td>
           </tr>
@@ -773,15 +774,16 @@ const BpbSignatures = () => (
   </div>
 );
 
-export default function ReportPage({ breakdown = [], parts = [], stock = [], spec = {}, sections = [] }) {
+export default function ReportPage({ projectId: passedProjectId, breakdown = [], parts = [], stock = [], spec = {}, sections = [] }) {
   const [activeTab, setActiveTab] = useState('full_rekap');
   const [hideZeroQty, setHideZeroQty] = useState(false);
 
   const [showVariables, setShowVariables] = useState(false);
 
   // Interactive Checklist states persisted via localStorage per project id
-  const projectId = spec.id || 'default';
-  
+  const projectId = passedProjectId || spec.id || 'default';
+
+
   const [checklistQC, setChecklistQC] = useState(() => {
     try {
       const saved = localStorage.getItem(`checklist_qc_${projectId}`);
@@ -821,6 +823,29 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
     localStorage.setItem(`checklist_spv_${projectId}`, JSON.stringify(checklistSPV));
   }, [checklistSPV, projectId]);
 
+  const [defaultBpb, setDefaultBpb] = useState(bpbSettingTemplate);
+  const [defaultBom, setDefaultBom] = useState(bomSettingTemplate);
+
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        const [bpbRes, bomRes] = await Promise.all([
+          api.get('/settings/bpb_setting_default'),
+          api.get('/settings/bom_setting_default')
+        ]);
+        if (bpbRes && bpbRes.data && bpbRes.data.value) {
+          setDefaultBpb(bpbRes.data.value);
+        }
+        if (bomRes && bomRes.data && bomRes.data.value) {
+          setDefaultBom(bomRes.data.value);
+        }
+      } catch (e) {
+        console.error('Failed to load default templates from DB:', e);
+      }
+    }
+    fetchTemplates();
+  }, [projectId]);
+
   const [customBpbRows, setCustomBpbRows] = useState(() => {
     try {
       const saved = localStorage.getItem(`bpb_custom_rows_${projectId}`);
@@ -833,11 +858,11 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`bpb_custom_rows_${projectId}`);
-      setCustomBpbRows(saved ? JSON.parse(saved) : bpbSettingTemplate);
+      setCustomBpbRows(saved ? JSON.parse(saved) : defaultBpb);
     } catch (_) {
-      setCustomBpbRows(bpbSettingTemplate);
+      setCustomBpbRows(defaultBpb);
     }
-  }, [projectId]);
+  }, [projectId, defaultBpb]);
 
   const updateBpbCell = (rowIdx, field, value) => {
     const nextRows = customBpbRows.map(row => {
@@ -877,7 +902,7 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
 
   const resetBpbTemplate = () => {
     if (window.confirm("Apakah Anda yakin ingin mengembalikan tabel BPB ke setting template bawaan (menghapus semua edit manual)?")) {
-      setCustomBpbRows(bpbSettingTemplate);
+      setCustomBpbRows(defaultBpb);
       try {
         localStorage.removeItem(`bpb_custom_rows_${projectId}`);
       } catch (e) {
@@ -898,11 +923,11 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`bom_custom_rows_${projectId}`);
-      setCustomBomRows(saved ? JSON.parse(saved) : bomSettingTemplate);
+      setCustomBomRows(saved ? JSON.parse(saved) : defaultBom);
     } catch (_) {
-      setCustomBomRows(bomSettingTemplate);
+      setCustomBomRows(defaultBom);
     }
-  }, [projectId]);
+  }, [projectId, defaultBom]);
 
   const updateBomCell = (rowIdx, field, value) => {
     const nextRows = customBomRows.map(row => {
@@ -942,7 +967,7 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
 
   const resetBomTemplate = () => {
     if (window.confirm("Apakah Anda yakin ingin mengembalikan tabel BOM ke setting template bawaan (menghapus semua edit manual)?")) {
-      setCustomBomRows(bomSettingTemplate);
+      setCustomBomRows(defaultBom);
       try {
         localStorage.removeItem(`bom_custom_rows_${projectId}`);
       } catch (e) {
@@ -950,6 +975,7 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
       }
     }
   };
+
 
   const { widths: bomColWidths, startResize: startBomColResize } = useColumnWidths(`bom_col_widths_${projectId}`);
   const { widths: bpbColWidths, startResize: startBpbColResize } = useColumnWidths(`bpb_col_widths_${projectId}`);
@@ -1083,7 +1109,7 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
         lastParent = item;
         return { ...item, isParent: true };
       }
-      
+
       const calcRes = calcBreakdownItem(item, breakdown, spec, lastParent || {});
       return {
         ...item,
@@ -1107,19 +1133,19 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
     }
     if (activeTab === 'kaca') {
       const targetCodes = ['kc', 'k¢', 'kcf'];
-      return processedData.filter(d => 
-        !d.isParent && 
-        d.komp && 
-        (targetCodes.includes(String(d.kode || '').toLowerCase().trim()) || 
-         targetCodes.includes(String(d.ks || '').toLowerCase().trim()))
+      return processedData.filter(d =>
+        !d.isParent &&
+        d.komp &&
+        (targetCodes.includes(String(d.kode || '').toLowerCase().trim()) ||
+          targetCodes.includes(String(d.ks || '').toLowerCase().trim()))
       );
     }
     if (activeTab === 'checklist') {
       const checklistNoFilters = ['.', '..', '...', 'fr', 'ft', '•', '••', '•••'];
-      return processedData.filter(d => 
-        !d.isParent && 
-        d.komp && 
-        d.no && 
+      return processedData.filter(d =>
+        !d.isParent &&
+        d.komp &&
+        d.no &&
         checklistNoFilters.includes(String(d.no).trim().toLowerCase())
       );
     }
@@ -1155,9 +1181,9 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
         groups.push(existingGroup);
       }
 
-      let existingItem = existingGroup.items.find(i => 
-        `${i._p} x ${i._l} x ${i._t}` === sizeStr && 
-        (i.tpk || '-') === tpk && 
+      let existingItem = existingGroup.items.find(i =>
+        `${i._p} x ${i._l} x ${i._t}` === sizeStr &&
+        (i.tpk || '-') === tpk &&
         (i.kode || '-') === kode
       );
 
@@ -1200,8 +1226,8 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
     });
   }, [bomRows, hideZeroQtyBom]);
 
-  const thStyle = { ...s.th, padding: '10px 14px', fontSize: 13, border: '1px solid #cbd5e1', textAlign: 'center', background: '#f8fafc', color: '#334155' };
-  const tdStyle = { ...s.td, padding: '10px 14px', fontSize: 13, border: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' };
+  const thStyle = { ...s.th, padding: '2px 4px', fontSize: 13, border: '1px solid #cbd5e1', textAlign: 'center', background: '#f8fafc', color: '#334155' };
+  const tdStyle = { ...s.td, padding: '2px 4px', fontSize: 13, border: '1px solid #cbd5e1', textAlign: 'center', color: '#0f172a' };
   const rekapThStyle = {
     padding: '7px 6px', fontSize: 13, lineHeight: 1.35, border: REKAP_BORDER,
     textAlign: 'center', background: '#fff', color: '#000', fontWeight: 700, fontFamily: REKAP_FONT,
@@ -1271,12 +1297,12 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
               <button
                 key={tab}
                 style={{
-                  padding: '8px 20px', borderRadius: '999px', 
+                  padding: '8px 20px', borderRadius: '999px',
                   border: activeTab === tab ? '1px solid #3b82f6' : '1px solid #cbd5e1',
                   background: activeTab === tab ? '#eff6ff' : '#fff',
                   color: activeTab === tab ? '#2563eb' : '#64748b',
                   fontWeight: activeTab === tab ? 700 : 500,
-                  cursor: 'pointer', fontSize: 13, 
+                  cursor: 'pointer', fontSize: 13,
                   transition: 'all 0.2s ease',
                   boxShadow: activeTab === tab ? '0 1px 2px rgba(59, 130, 246, 0.1)' : '0 1px 2px rgba(0,0,0,0.02)'
                 }}
@@ -1313,95 +1339,14 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        {activeTab === 'bom' ? (
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <RekapPage breakdown={breakdown} parts={parts} stock={stock} spec={spec} sections={sections} />
-          </div>
-        ) : activeTab === 'bom_sheet' ? (
-          <div id="print-bom-sheet" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <style dangerouslySetInnerHTML={{ __html: `
-              @media print {
-                .no-print {
-                  display: none !important;
-                }
-                body {
-                  background: #fff !important;
-                  color: #000 !important;
-                }
-                .print-full-width {
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  border: none !important;
-                  box-shadow: none !important;
-                }
-                .table-print {
-                  border: 2px solid #000 !important;
-                  width: 100% !important;
-                }
-                .th-print {
-                  border: 1px solid #000 !important;
-                  background: #f1f5f9 !important;
-                  color: #000 !important;
-                }
-                .td-print {
-                  border: 1px solid #000 !important;
-                  color: #000 !important;
-                  background: transparent !important;
-                }
-                .signature-box {
-                  break-inside: avoid;
-                }
-              }
-            `}} />
-
-            <div className="print-full-width" style={{ padding: 20 }}>
-              <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={hideZeroQtyBom} 
-                      onChange={(e) => setHideZeroQtyBom(e.target.checked)}
-                      style={{ width: 16, height: 16, cursor: 'pointer' }}
-                    />
-                    Tampilkan Hanya Item dengan Jumlah &gt; 0
-                  </label>
-                  <button 
-                    style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600 }}
-                    onClick={resetBomTemplate}
-                  >
-                    Reset Template BOM
-                  </button>
-                </div>
-                <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-bom-sheet')}>
-                  ⎙ Cetak BOM / Simpan PDF
-                </button>
-              </div>
-
-              <BomHeader spec={spec} componentCount={processedData.filter(d => !d.isParent && d.komp).length} />
-
-              <div style={{ ...s.tableWrap, padding: '0 20px 20px 20px', overflowX: 'auto' }}>
-                <MaterialReportTable
-                  rows={visibleBomRows}
-                  colWidths={bomColWidths}
-                  startResize={startBomColResize}
-                  onDeleteRow={deleteBomRow}
-                  onUpdateCell={updateBomCell}
-                  onCellContextMenu={onCellContextMenu}
-                  thStyle={thStyle}
-                  tdStyle={tdStyle}
-                  variant="bom"
-                />
-              </div>
-
-              <BpbSignatures />
+          {activeTab === 'bom' ? (
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <RekapPage breakdown={breakdown} parts={parts} stock={stock} spec={spec} sections={sections} />
             </div>
-          </div>
-        ) : activeTab === 'bpb' ? (
-          <div id="print-bpb" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <style dangerouslySetInnerHTML={{ __html: `
+          ) : activeTab === 'bom_sheet' ? (
+            <div id="print-bom-sheet" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <style dangerouslySetInnerHTML={{
+                __html: `
               @media print {
                 .no-print {
                   display: none !important;
@@ -1438,451 +1383,535 @@ export default function ReportPage({ breakdown = [], parts = [], stock = [], spe
               }
             `}} />
 
-            <div className="print-full-width" style={{ padding: 20 }}>
-              <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={hideZeroQty} 
-                      onChange={(e) => setHideZeroQty(e.target.checked)}
-                      style={{ width: 16, height: 16, cursor: 'pointer' }}
-                    />
-                    Tampilkan Hanya Item dengan Jumlah &gt; 0
-                  </label>
-                  <button 
-                    style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600 }}
-                    onClick={resetBpbTemplate}
-                  >
-                    Reset Template BPB
-                  </button>
-                </div>
-                <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-bpb')}>
-                  ⎙ Cetak BPB / Simpan PDF
-                </button>
-              </div>
-
-              <BpbHeader spec={spec} componentCount={processedData.filter(d => !d.isParent && d.komp).length} />
-
-              <div style={{ ...s.tableWrap, padding: '0 20px 20px 20px', overflowX: 'auto' }}>
-                <MaterialReportTable
-                  rows={visibleBpbRows}
-                  colWidths={bpbColWidths}
-                  startResize={startBpbColResize}
-                  onDeleteRow={deleteBpbRow}
-                  onUpdateCell={updateBpbCell}
-                  onCellContextMenu={onCellContextMenu}
-                  thStyle={thStyle}
-                  tdStyle={tdStyle}
-                  variant="bpb"
-                />
-              </div>
-
-              <BpbSignatures />
-            </div>
-          </div>
-        ) : activeTab === 'checklist' ? (
-          <div id="print-checklist" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <style dangerouslySetInnerHTML={{ __html: `
-              @media print {
-                .no-print {
-                  display: none !important;
-                }
-                body {
-                  background: #fff !important;
-                  color: #000 !important;
-                }
-                .print-full-width {
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  border: none !important;
-                  box-shadow: none !important;
-                }
-                .table-print {
-                  border: 2px solid #000 !important;
-                  width: 100% !important;
-                }
-                .th-print {
-                  border: 1px solid #000 !important;
-                  background: #f1f5f9 !important;
-                  color: #000 !important;
-                }
-                .td-print {
-                  border: 1px solid #000 !important;
-                  color: #000 !important;
-                  background: transparent !important;
-                }
-                .signature-box {
-                  break-inside: avoid;
-                }
-              }
-            `}} />
-
-            <div className="print-full-width" style={{ padding: 20 }}>
-              
-              {/* Header Title & Bulk Actions (no-print) */}
-              <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button style={{ ...s.btnSm, background: '#10b981', color: '#fff', border: 'none' }} onClick={() => checkAllQC(filteredComponents)}>QC Selesai Semua</button>
-                  <button style={{ ...s.btnSm, background: '#0ea5e9', color: '#fff', border: 'none' }} onClick={() => checkAllDriv(filteredComponents)}>Driver Selesai Semua</button>
-                  <button style={{ ...s.btnSm, background: '#6366f1', color: '#fff', border: 'none' }} onClick={() => checkAllSPV(filteredComponents)}>SPV Selesai Semua</button>
-                  <button style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none' }} onClick={resetAllChecklists}>Reset Checks</button>
-                </div>
-                <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-checklist')}>
-                  ⎙ Cetak Checklist / Simpan PDF
-                </button>
-              </div>
-
-              {/* Header Metadata Section */}
-              <ChecklistHeader spec={spec} />
-
-              {/* Checklist Table */}
-              <div style={{ ...s.tableWrap, overflowX: 'auto', paddingBottom: 20 }}>
-                <table className="table-print" style={{ ...s.table, borderCollapse: 'collapse', width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th className="th-print" style={{ ...thStyle, width: 40 }} rowSpan={2}>√</th>
-                      <th className="th-print" style={{ ...thStyle, textAlign: 'left', minWidth: 200 }} rowSpan={2}>Komponen</th>
-                      <th className="th-print" style={{ ...thStyle, width: 150 }} rowSpan={2}>Ukuran</th>
-                      <th className="th-print" style={{ ...thStyle, width: 40 }} rowSpan={2}>T</th>
-                      <th className="th-print" style={{ ...thStyle, width: 45 }} rowSpan={2}>k</th>
-                      <th className="th-print" style={{ ...thStyle, width: 55 }} rowSpan={2}>Total</th>
-                      <th className="th-print" style={{ ...thStyle, width: 60 }} rowSpan={2}>COLY</th>
-                      <th className="th-print" style={{ ...thStyle, borderBottom: 'none' }} colSpan={3}>√</th>
-                    </tr>
-                    <tr>
-                      <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>QC<br/><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
-                      <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>Driv.<br/><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
-                      <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>SPV<br/><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredComponents.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} style={{ ...s.empty, padding: 30 }}>
-                          Tidak ada komponen checklist (nilai No* tidak mengandung •••, ••, fr, •)
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredComponents.map((item, i) => {
-                        const key = `${item.id || i}`;
-                        const isCheckedQC = !!checklistQC[key];
-                        const isCheckedDriv = !!checklistDriv[key];
-                        const isCheckedSPV = !!checklistSPV[key];
-
-                        return (
-                          <tr
-                            key={key}
-                            style={{
-                              background: (isCheckedQC && isCheckedDriv && isCheckedSPV) ? '#f0fdf4' : (i % 2 === 0 ? '#fff' : '#f8fafc'),
-                              transition: 'background-color 0.15s ease'
-                            }}
-                          >
-                            <td className="td-print" style={{ ...tdStyle, fontWeight: 700 }}>{item.no}</td>
-                            <td className="td-print" style={{ ...tdStyle, textAlign: 'left', fontWeight: 600 }}>{item.komp}</td>
-                            <td className="td-print" style={{ ...tdStyle, fontFamily: 'monospace' }}>
-                              {formatDisplayValue(item._p)} x {formatDisplayValue(item._l)} x {formatDisplayValue(item._t)}
-                            </td>
-                            <td className="td-print" style={tdStyle}>{item.tpk || '-'}</td>
-                            <td className="td-print" style={{ ...tdStyle, fontWeight: 600 }}>{item.kode || '-'}</td>
-                            <td className="td-print" style={{ ...tdStyle, fontWeight: 700, color: '#2563eb' }}>{item.qty_total || (Number(item._sub) * Number(item._jml)) || 1}</td>
-                            <td className="td-print" style={tdStyle}>
-                              <EditableDiv style={{ textAlign: 'center' }} />
-                            </td>
-                            
-                            {/* QC checkbox */}
-                            <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistQC(p => ({ ...p, [key]: !p[key] }))}>
-                              <div className="no-print" style={{
-                                width: 18, height: 18, border: isCheckedQC ? '2px solid #10b981' : '2px solid #cbd5e1',
-                                borderRadius: 4, background: isCheckedQC ? '#10b981' : '#fff', margin: 'auto',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
-                              }}>
-                                {isCheckedQC && '✓'}
-                              </div>
-                              <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
-                                {isCheckedQC ? '✓' : ''}
-                              </div>
-                            </td>
-
-                            {/* Driver checkbox */}
-                            <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistDriv(p => ({ ...p, [key]: !p[key] }))}>
-                              <div className="no-print" style={{
-                                width: 18, height: 18, border: isCheckedDriv ? '2px solid #0ea5e9' : '2px solid #cbd5e1',
-                                borderRadius: 4, background: isCheckedDriv ? '#0ea5e9' : '#fff', margin: 'auto',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
-                              }}>
-                                {isCheckedDriv && '✓'}
-                              </div>
-                              <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
-                                {isCheckedDriv ? '✓' : ''}
-                              </div>
-                            </td>
-
-                            {/* SPV checkbox */}
-                            <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistSPV(p => ({ ...p, [key]: !p[key] }))}>
-                              <div className="no-print" style={{
-                                width: 18, height: 18, border: isCheckedSPV ? '2px solid #6366f1' : '2px solid #cbd5e1',
-                                borderRadius: 4, background: isCheckedSPV ? '#6366f1' : '#fff', margin: 'auto',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
-                              }}>
-                                {isCheckedSPV && '✓'}
-                              </div>
-                              <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
-                                {isCheckedSPV ? '✓' : ''}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Signatures */}
-              <div
-                className="signature-box"
-                style={{
-                  marginTop: 40,
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 24,
-                  textAlign: 'center'
-                }}
-              >
-                {[
-                  { role: 'Yang Menerima (Client)', desc: 'Penerima Barang' },
-                  { role: 'Driver (Sopir)', desc: 'Pengirim' },
-                  { role: 'QC Checker', desc: 'Mutu & Kelayakan' },
-                  { role: 'Supervisor (SPV)', desc: 'Penanggung Jawab' }
-                ].map((dept, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: 12,
-                      border: '1px solid #cbd5e1',
-                      borderRadius: 8,
-                      background: '#f8fafc',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      height: 110
-                    }}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
-                      {dept.role}
-                    </div>
-                    <div style={{ fontSize: 9, color: '#94a3b8', fontStyle: 'italic', marginBottom: 16 }}>
-                      {dept.desc}
-                    </div>
-                    <div style={{ borderTop: '1px dashed #64748b', fontSize: 11, paddingTop: 4, fontWeight: 600, color: '#334155' }}>
-                      ( ................................... )
-                    </div>
+              <div className="print-full-width" style={{ padding: 20 }}>
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={hideZeroQtyBom}
+                        onChange={(e) => setHideZeroQtyBom(e.target.checked)}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                      Tampilkan Hanya Item dengan Jumlah &gt; 0
+                    </label>
+                    <button
+                      style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600 }}
+                      onClick={resetBomTemplate}
+                    >
+                      Reset Template BOM
+                    </button>
                   </div>
-                ))}
+                  <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-bom-sheet')}>
+                    ⎙ Cetak BOM / Simpan PDF
+                  </button>
+                </div>
+
+                <BomHeader spec={spec} componentCount={processedData.filter(d => !d.isParent && d.komp).length} />
+
+                <div style={{ ...s.tableWrap, padding: '0 20px 20px 20px', overflowX: 'auto' }}>
+                  <MaterialReportTable
+                    rows={visibleBomRows}
+                    colWidths={bomColWidths}
+                    startResize={startBomColResize}
+                    onDeleteRow={deleteBomRow}
+                    onUpdateCell={updateBomCell}
+                    onCellContextMenu={onCellContextMenu}
+                    thStyle={thStyle}
+                    tdStyle={tdStyle}
+                    variant="bom"
+                  />
+                </div>
+
+                <BpbSignatures />
               </div>
-
             </div>
-          </div>
-        ) : (
-          <div id="print-report" className="rekap-preview-card" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box', overflow: 'visible' }}>
-            <div className="no-print" style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: 16, color: '#0f172a' }}>
-                Report {activeTab === 'full_rekap' ? 'Full Rekap' : activeTab === 'ks' ? 'KS' : activeTab === 'non_ks' ? 'Non KS' : 'Kaca'}
-              </h3>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <Badge color="blue">{filteredComponents.length} Komponen</Badge>
-                <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-report', { pageSize: REKAP_PRINT_PAGE, margin: '0', extraPrintCss: REKAP_PRINT_CSS })}>
-                  ⎙ Cetak / PDF (Letter)
-                </button>
+          ) : activeTab === 'bpb' ? (
+            <div id="print-bpb" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <style dangerouslySetInnerHTML={{
+                __html: `
+              @media print {
+                .no-print {
+                  display: none !important;
+                }
+                body {
+                  background: #fff !important;
+                  color: #000 !important;
+                }
+                .print-full-width {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                }
+                .table-print {
+                  border: 2px solid #000 !important;
+                  width: 100% !important;
+                }
+                .th-print {
+                  border: 1px solid #000 !important;
+                  background: #f1f5f9 !important;
+                  color: #000 !important;
+                }
+                .td-print {
+                  border: 1px solid #000 !important;
+                  color: #000 !important;
+                  background: transparent !important;
+                }
+                .signature-box {
+                  break-inside: avoid;
+                }
+              }
+            `}} />
+
+              <div className="print-full-width" style={{ padding: 20 }}>
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={hideZeroQty}
+                        onChange={(e) => setHideZeroQty(e.target.checked)}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                      Tampilkan Hanya Item dengan Jumlah &gt; 0
+                    </label>
+                    <button
+                      style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 600 }}
+                      onClick={resetBpbTemplate}
+                    >
+                      Reset Template BPB
+                    </button>
+                  </div>
+                  <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-bpb')}>
+                    ⎙ Cetak BPB / Simpan PDF
+                  </button>
+                </div>
+
+                <BpbHeader spec={spec} componentCount={processedData.filter(d => !d.isParent && d.komp).length} />
+
+                <div style={{ ...s.tableWrap, padding: '0 20px 20px 20px', overflowX: 'auto' }}>
+                  <MaterialReportTable
+                    rows={visibleBpbRows}
+                    colWidths={bpbColWidths}
+                    startResize={startBpbColResize}
+                    onDeleteRow={deleteBpbRow}
+                    onUpdateCell={updateBpbCell}
+                    onCellContextMenu={onCellContextMenu}
+                    thStyle={thStyle}
+                    tdStyle={tdStyle}
+                    variant="bpb"
+                  />
+                </div>
+
+                <BpbSignatures />
               </div>
             </div>
+          ) : activeTab === 'checklist' ? (
+            <div id="print-checklist" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <style dangerouslySetInnerHTML={{
+                __html: `
+              @media print {
+                .no-print {
+                  display: none !important;
+                }
+                body {
+                  background: #fff !important;
+                  color: #000 !important;
+                }
+                .print-full-width {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                }
+                .table-print {
+                  border: 2px solid #000 !important;
+                  width: 100% !important;
+                }
+                .th-print {
+                  border: 1px solid #000 !important;
+                  background: #f1f5f9 !important;
+                  color: #000 !important;
+                }
+                .td-print {
+                  border: 1px solid #000 !important;
+                  color: #000 !important;
+                  background: transparent !important;
+                }
+                .signature-box {
+                  break-inside: avoid;
+                }
+              }
+            `}} />
 
-            <div className="rekap-document-body" style={{ padding: REKAP_PRINT_MARGIN, fontFamily: REKAP_FONT, boxSizing: 'border-box' }}>
-              {activeTab === 'kaca' ? (
-                <KacaHeader spec={spec} />
-              ) : (
-                <ReportHeader title={`REKAPITULASI PEMAKAIAN BAHAN (${activeTab === 'full_rekap' ? 'FULL REKAP' : activeTab === 'ks' ? 'KS' : 'NON KS'})`} spec={spec} />
-              )}
+              <div className="print-full-width" style={{ padding: 20 }}>
 
-              <div className="rekap-table-wrap" style={{ marginTop: 4, width: '100%', overflow: 'visible' }}>
-                <table className="rekap-table" style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', wordBreak: 'break-word' }}>
-                  <colgroup>
-                    <col style={{ width: '4%' }} />
-                    <col style={{ width: '38%' }} />
-                    <col style={{ width: '14%' }} />
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '5%' }} />
-                    <col style={{ width: '21%' }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th style={rekapThStyle}>No</th>
-                      <th style={{ ...rekapThStyle, textAlign: 'left', padding: '7px 8px' }}>Nama Komponen</th>
-                      <th style={rekapThStyle}>Ukuran</th>
-                      <th style={rekapThStyle}>{activeTab === 'kaca' ? 'T' : 'Tpk'}</th>
-                      <th style={rekapThStyle}>{activeTab === 'kaca' ? 'k¢' : 'kode'}</th>
-                      <th style={rekapThStyle}>Total</th>
-                      <th style={rekapThStyle}>√</th>
-                      <th style={rekapThStyle}>KETERANGAN</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedComponents.length === 0 ? (
-                      <tr><td colSpan={8} style={{ ...rekapTdStyle, padding: 20, textAlign: 'center' }}>Tidak ada data.</td></tr>
-                    ) : groupedComponents.map((group, gIdx) => {
-                      const tpkSpans = buildRowSpanMap(group.items, (item) => item.tpk || '-');
-                      const kodeSpans = buildRowSpanMap(group.items, (item) => item.kode || '-');
-                      return (
-                        <React.Fragment key={gIdx}>
-                          {group.items.map((item, iIdx) => (
-                            <tr key={`${gIdx}-${iIdx}`}>
-                              {iIdx === 0 && (
-                                <td rowSpan={group.items.length} style={rekapTdStyle}>
-                                  <EditableDiv>{gIdx + 1}</EditableDiv>
-                                </td>
-                              )}
-                              {iIdx === 0 && (
-                                <td rowSpan={group.items.length} style={{ ...rekapTdStyle, textAlign: 'left', verticalAlign: 'top', padding: '6px 8px', maxWidth: 0 }}>
-                                  <EditableDiv>{group.name}</EditableDiv>
-                                </td>
-                              )}
-                              <td style={rekapTdStyle}>
-                                <EditableDiv>{formatDisplayValue(item._p)} x {formatDisplayValue(item._l)} x {formatDisplayValue(item._t)}</EditableDiv>
+                {/* Header Title & Bulk Actions (no-print) */}
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button style={{ ...s.btnSm, background: '#10b981', color: '#fff', border: 'none' }} onClick={() => checkAllQC(filteredComponents)}>QC Selesai Semua</button>
+                    <button style={{ ...s.btnSm, background: '#0ea5e9', color: '#fff', border: 'none' }} onClick={() => checkAllDriv(filteredComponents)}>Driver Selesai Semua</button>
+                    <button style={{ ...s.btnSm, background: '#6366f1', color: '#fff', border: 'none' }} onClick={() => checkAllSPV(filteredComponents)}>SPV Selesai Semua</button>
+                    <button style={{ ...s.btnSm, background: '#ef4444', color: '#fff', border: 'none' }} onClick={resetAllChecklists}>Reset Checks</button>
+                  </div>
+                  <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-checklist')}>
+                    ⎙ Cetak Checklist / Simpan PDF
+                  </button>
+                </div>
+
+                {/* Header Metadata Section */}
+                <ChecklistHeader spec={spec} />
+
+                {/* Checklist Table */}
+                <div style={{ ...s.tableWrap, overflowX: 'auto', paddingBottom: 20 }}>
+                  <table className="table-print" style={{ ...s.table, borderCollapse: 'collapse', width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th className="th-print" style={{ ...thStyle, width: 40 }} rowSpan={2}>√</th>
+                        <th className="th-print" style={{ ...thStyle, textAlign: 'left', minWidth: 200 }} rowSpan={2}>Komponen</th>
+                        <th className="th-print" style={{ ...thStyle, width: 150 }} rowSpan={2}>Ukuran</th>
+                        <th className="th-print" style={{ ...thStyle, width: 40 }} rowSpan={2}>T</th>
+                        <th className="th-print" style={{ ...thStyle, width: 45 }} rowSpan={2}>k</th>
+                        <th className="th-print" style={{ ...thStyle, width: 55 }} rowSpan={2}>Total</th>
+                        <th className="th-print" style={{ ...thStyle, width: 60 }} rowSpan={2}>COLY</th>
+                        <th className="th-print" style={{ ...thStyle, borderBottom: 'none' }} colSpan={3}>√</th>
+                      </tr>
+                      <tr>
+                        <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>QC<br /><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
+                        <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>Driv.<br /><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
+                        <th className="th-print" style={{ ...thStyle, width: 65, borderTop: 'none', fontSize: 10 }}>SPV<br /><span style={{ fontSize: 8, fontWeight: 400 }}>ADA / TDK</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredComponents.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} style={{ ...s.empty, padding: 30 }}>
+                            Tidak ada komponen checklist (nilai No* tidak mengandung •••, ••, fr, •)
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredComponents.map((item, i) => {
+                          const key = `${item.id || i}`;
+                          const isCheckedQC = !!checklistQC[key];
+                          const isCheckedDriv = !!checklistDriv[key];
+                          const isCheckedSPV = !!checklistSPV[key];
+
+                          return (
+                            <tr
+                              key={key}
+                              style={{
+                                background: (isCheckedQC && isCheckedDriv && isCheckedSPV) ? '#f0fdf4' : (i % 2 === 0 ? '#fff' : '#f8fafc'),
+                                transition: 'background-color 0.15s ease'
+                              }}
+                            >
+                              <td className="td-print" style={{ ...tdStyle, fontWeight: 700 }}>{item.no}</td>
+                              <td className="td-print" style={{ ...tdStyle, textAlign: 'left', fontWeight: 600 }}>{item.komp}</td>
+                              <td className="td-print" style={{ ...tdStyle, fontFamily: 'monospace' }}>
+                                {formatDisplayValue(item._p)} x {formatDisplayValue(item._l)} x {formatDisplayValue(item._t)}
                               </td>
-                              {tpkSpans[iIdx]?.show && (
-                                <td rowSpan={tpkSpans[iIdx].span} style={rekapTdStyle}>
-                                  <EditableDiv>{item.tpk || '-'}</EditableDiv>
-                                </td>
-                              )}
-                              {kodeSpans[iIdx]?.show && (
-                                <td rowSpan={kodeSpans[iIdx].span} style={rekapTdStyle}>
-                                  <EditableDiv>{item.kode || '-'}</EditableDiv>
-                                </td>
-                              )}
-                              <td style={{ ...rekapTdStyle, fontWeight: 700 }}>
-                                <EditableDiv>{item.qty_grouped}</EditableDiv>
+                              <td className="td-print" style={tdStyle}>{item.tpk || '-'}</td>
+                              <td className="td-print" style={{ ...tdStyle, fontWeight: 600 }}>{item.kode || '-'}</td>
+                              <td className="td-print" style={{ ...tdStyle, fontWeight: 700, color: '#2563eb' }}>{item.qty_total || (Number(item._sub) * Number(item._jml)) || 1}</td>
+                              <td className="td-print" style={tdStyle}>
+                                <EditableDiv style={{ textAlign: 'center' }} />
                               </td>
-                              <td style={rekapTdStyle}></td>
-                              <td style={{ ...rekapTdStyle, textAlign: 'left', maxWidth: 0 }}>
-                                <EditableDiv>{item.keterangan && item.keterangan !== '-' ? item.keterangan : ''}</EditableDiv>
+
+                              {/* QC checkbox */}
+                              <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistQC(p => ({ ...p, [key]: !p[key] }))}>
+                                <div className="no-print" style={{
+                                  width: 18, height: 18, border: isCheckedQC ? '2px solid #10b981' : '2px solid #cbd5e1',
+                                  borderRadius: 4, background: isCheckedQC ? '#10b981' : '#fff', margin: 'auto',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
+                                }}>
+                                  {isCheckedQC && '✓'}
+                                </div>
+                                <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
+                                  {isCheckedQC ? '✓' : ''}
+                                </div>
+                              </td>
+
+                              {/* Driver checkbox */}
+                              <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistDriv(p => ({ ...p, [key]: !p[key] }))}>
+                                <div className="no-print" style={{
+                                  width: 18, height: 18, border: isCheckedDriv ? '2px solid #0ea5e9' : '2px solid #cbd5e1',
+                                  borderRadius: 4, background: isCheckedDriv ? '#0ea5e9' : '#fff', margin: 'auto',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
+                                }}>
+                                  {isCheckedDriv && '✓'}
+                                </div>
+                                <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
+                                  {isCheckedDriv ? '✓' : ''}
+                                </div>
+                              </td>
+
+                              {/* SPV checkbox */}
+                              <td className="td-print" style={{ ...tdStyle, cursor: 'pointer' }} onClick={() => setChecklistSPV(p => ({ ...p, [key]: !p[key] }))}>
+                                <div className="no-print" style={{
+                                  width: 18, height: 18, border: isCheckedSPV ? '2px solid #6366f1' : '2px solid #cbd5e1',
+                                  borderRadius: 4, background: isCheckedSPV ? '#6366f1' : '#fff', margin: 'auto',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: 11
+                                }}>
+                                  {isCheckedSPV && '✓'}
+                                </div>
+                                <div className="print-only" style={{ display: 'none', width: 14, height: 14, border: '1.5px solid #000', margin: 'auto', fontSize: 10, lineHeight: '14px', textAlign: 'center' }}>
+                                  {isCheckedSPV ? '✓' : ''}
+                                </div>
                               </td>
                             </tr>
-                          ))}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Signatures */}
+                <div
+                  className="signature-box"
+                  style={{
+                    marginTop: 40,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: 24,
+                    textAlign: 'center'
+                  }}
+                >
+                  {[
+                    { role: 'Yang Menerima (Client)', desc: 'Penerima Barang' },
+                    { role: 'Driver (Sopir)', desc: 'Pengirim' },
+                    { role: 'QC Checker', desc: 'Mutu & Kelayakan' },
+                    { role: 'Supervisor (SPV)', desc: 'Penanggung Jawab' }
+                  ].map((dept, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: 12,
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 8,
+                        background: '#f8fafc',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        height: 110
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
+                        {dept.role}
+                      </div>
+                      <div style={{ fontSize: 9, color: '#94a3b8', fontStyle: 'italic', marginBottom: 16 }}>
+                        {dept.desc}
+                      </div>
+                      <div style={{ borderTop: '1px dashed #64748b', fontSize: 11, paddingTop: 4, fontWeight: 600, color: '#334155' }}>
+                        ( ................................... )
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
-          </div>
+          ) : (
+            <div id="print-report" className="rekap-preview-card" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box', overflow: 'visible' }}>
+              <div className="no-print" style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: 16, color: '#0f172a' }}>
+                  Report {activeTab === 'full_rekap' ? 'Full Rekap' : activeTab === 'ks' ? 'KS' : activeTab === 'non_ks' ? 'Non KS' : 'Kaca'}
+                </h3>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <Badge color="blue">{filteredComponents.length} Komponen</Badge>
+                  <button style={{ ...s.btnSm, background: '#0f172a', color: '#fff', border: 'none', fontWeight: 600 }} onClick={() => printArea('print-report', { pageSize: REKAP_PRINT_PAGE, margin: '0', extraPrintCss: REKAP_PRINT_CSS })}>
+                    ⎙ Cetak / PDF (Letter)
+                  </button>
+                </div>
+              </div>
+
+              <div className="rekap-document-body" style={{ padding: REKAP_PRINT_MARGIN, fontFamily: REKAP_FONT, boxSizing: 'border-box' }}>
+                {activeTab === 'kaca' ? (
+                  <KacaHeader spec={spec} />
+                ) : (
+                  <ReportHeader title={`REKAPITULASI PEMAKAIAN BAHAN (${activeTab === 'full_rekap' ? 'FULL REKAP' : activeTab === 'ks' ? 'KS' : 'NON KS'})`} spec={spec} />
+                )}
+
+                <div className="rekap-table-wrap" style={{ marginTop: 4, width: '100%', overflow: 'visible' }}>
+                  <table className="rekap-table" style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', wordBreak: 'break-word' }}>
+                    <colgroup>
+                      <col style={{ width: '4%' }} />
+                      <col style={{ width: '38%' }} />
+                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '6%' }} />
+                      <col style={{ width: '6%' }} />
+                      <col style={{ width: '6%' }} />
+                      <col style={{ width: '5%' }} />
+                      <col style={{ width: '21%' }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th style={rekapThStyle}>No</th>
+                        <th style={{ ...rekapThStyle, textAlign: 'left', padding: '7px 8px' }}>Nama Komponen</th>
+                        <th style={rekapThStyle}>Ukuran</th>
+                        <th style={rekapThStyle}>{activeTab === 'kaca' ? 'T' : 'Tpk'}</th>
+                        <th style={rekapThStyle}>{activeTab === 'kaca' ? 'k¢' : 'kode'}</th>
+                        <th style={rekapThStyle}>Total</th>
+                        <th style={rekapThStyle}>√</th>
+                        <th style={rekapThStyle}>KETERANGAN</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupedComponents.length === 0 ? (
+                        <tr><td colSpan={8} style={{ ...rekapTdStyle, padding: 20, textAlign: 'center' }}>Tidak ada data.</td></tr>
+                      ) : groupedComponents.map((group, gIdx) => {
+                        const tpkSpans = buildRowSpanMap(group.items, (item) => item.tpk || '-');
+                        const kodeSpans = buildRowSpanMap(group.items, (item) => item.kode || '-');
+                        return (
+                          <React.Fragment key={gIdx}>
+                            {group.items.map((item, iIdx) => (
+                              <tr key={`${gIdx}-${iIdx}`}>
+                                {iIdx === 0 && (
+                                  <td rowSpan={group.items.length} style={rekapTdStyle}>
+                                    <EditableDiv>{gIdx + 1}</EditableDiv>
+                                  </td>
+                                )}
+                                {iIdx === 0 && (
+                                  <td rowSpan={group.items.length} style={{ ...rekapTdStyle, textAlign: 'left', verticalAlign: 'top', padding: '6px 8px', maxWidth: 0 }}>
+                                    <EditableDiv>{group.name}</EditableDiv>
+                                  </td>
+                                )}
+                                <td style={rekapTdStyle}>
+                                  <EditableDiv>{formatDisplayValue(item._p)} x {formatDisplayValue(item._l)} x {formatDisplayValue(item._t)}</EditableDiv>
+                                </td>
+                                {tpkSpans[iIdx]?.show && (
+                                  <td rowSpan={tpkSpans[iIdx].span} style={rekapTdStyle}>
+                                    <EditableDiv>{item.tpk || '-'}</EditableDiv>
+                                  </td>
+                                )}
+                                {kodeSpans[iIdx]?.show && (
+                                  <td rowSpan={kodeSpans[iIdx].span} style={rekapTdStyle}>
+                                    <EditableDiv>{item.kode || '-'}</EditableDiv>
+                                  </td>
+                                )}
+                                <td style={{ ...rekapTdStyle, fontWeight: 700 }}>
+                                  <EditableDiv>{item.qty_grouped}</EditableDiv>
+                                </td>
+                                <td style={rekapTdStyle}></td>
+                                <td style={{ ...rekapTdStyle, textAlign: 'left', maxWidth: 0 }}>
+                                  <EditableDiv>{item.keterangan && item.keterangan !== '-' ? item.keterangan : ''}</EditableDiv>
+                                </td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar Variables Panel */}
+        {showVariables && (
+          <VariablesPanel spec={spec} sections={sections} />
         )}
-      </div>
 
-      {/* Sidebar Variables Panel */}
-      {showVariables && (
-        <VariablesPanel spec={spec} sections={sections} />
-      )}
+        {/* JML Calculate Source Modal */}
+        <div style={{ display: csModal ? 'block' : 'none' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setCsModal(false)}
+          >
+            <div style={{ background: '#fff', borderRadius: 10, padding: 20, minWidth: 280, maxWidth: 400, boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1e293b' }}>Pilih Sumber Kalkulasi</div>
+              {csStep === 'type' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {['Breakdown', 'Spek', 'CNC', 'Report'].map(t => (
+                    <button key={t} onClick={() => { setCsType(t); setCsStep(t.toLowerCase()); }}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontWeight: 500, fontSize: 13 }}
+                    >{t}</button>
+                  ))}
+                </div>
+              )}
+              {csStep === 'breakdown' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
+                  {[{ key: 'minifix@', label: 'minifix @' }, { key: 'dowel@', label: 'dowel @' }, { key: 'qty_total', label: 'Qty Total' }, { key: 'p_gross', label: 'P Gross (m)' }, { key: 'l_gross', label: 'L Gross (m)' }, { key: 'keliling', label: 'Keliling (m)' }, { key: 'area_m2', label: 'Area (m²)' }, { key: 'vol_m3', label: 'Volume (m³)' }, { key: 'q_minifix_total', label: 'Minifix Total' }, { key: 'q_dowel_total', label: 'Dowel Total' }].map(r => (
+                    <button key={r.key} onClick={() => setCalcSource('Breakdown', r.key)}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
+                    >{r.label}</button>
+                  ))}
+                  <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+                </div>
+              )}
+              {csStep === 'spek' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
+                  {spekSections.length === 0 && <span style={{ color: '#94a3b8', fontSize: 13 }}>Tidak ada section</span>}
+                  {spekSections.map(s => (
+                    <button key={s.name} onClick={() => { setCsSection(s.name); setCsStep('spekSection'); }}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
+                    >{s.name}</button>
+                  ))}
+                  <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+                </div>
+              )}
+              {csStep === 'spekSection' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
+                  {spekSections.find(s => s.name === csSection)?.rows.map(r => (
+                    <button key={r.alias} onClick={() => setCalcSource('Spek', null, csSection, r.alias)}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
+                    >{r.label || r.alias}</button>
+                  ))}
+                  <button onClick={() => setCsStep('spek')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+                </div>
+              )}
+              {csStep === 'cnc' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {[{ key: 'p_cnc', label: 'P CNC' }, { key: 'l_cnc', label: 'L CNC' }, { key: 'ukuran_cnc', label: 'Ukuran CNC' }].map(r => (
+                    <button key={r.key} onClick={() => setCalcSource('CNC', r.key)}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
+                    >{r.label}</button>
+                  ))}
+                  <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+                </div>
+              )}
+              {csStep === 'report' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {[{ key: 'qty_order', label: 'Qty Order' }, { key: 'qty_produksi', label: 'Qty Produksi' }, { key: 'total_part', label: 'Total Part' }].map(r => (
+                    <button key={r.key} onClick={() => setCalcSource('Report', r.key)}
+                      style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
+                    >{r.label}</button>
+                  ))}
+                  <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-      {/* JML Calculate Source Modal */}
-      <div style={{ display: csModal ? 'block' : 'none' }}>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setCsModal(false)}
-        >
-          <div style={{ background: '#fff', borderRadius: 10, padding: 20, minWidth: 280, maxWidth: 400, boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}
+        {/* Right-click context menu */}
+        {ctxMenu && (
+          <div
+            style={{
+              position: 'fixed', top: ctxMenu.y, left: ctxMenu.x,
+              background: '#fff', border: '0.5px solid #ccc', borderRadius: 6,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 2001, minWidth: 160, padding: '4px 0',
+            }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1e293b' }}>Pilih Sumber Kalkulasi</div>
-            {csStep === 'type' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {['Breakdown', 'Spek', 'CNC', 'Report'].map(t => (
-                  <button key={t} onClick={() => { setCsType(t); setCsStep(t.toLowerCase()); }}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontWeight: 500, fontSize: 13 }}
-                  >{t}</button>
-                ))}
-              </div>
-            )}
-            {csStep === 'breakdown' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
-                {[{key:'minifix@',label:'minifix @'},{key:'dowel@',label:'dowel @'},{key:'qty_total',label:'Qty Total'},{key:'p_gross',label:'P Gross (m)'},{key:'l_gross',label:'L Gross (m)'},{key:'keliling',label:'Keliling (m)'},{key:'area_m2',label:'Area (m²)'},{key:'vol_m3',label:'Volume (m³)'},{key:'q_minifix_total',label:'Minifix Total'},{key:'q_dowel_total',label:'Dowel Total'}].map(r => (
-                  <button key={r.key} onClick={() => setCalcSource('Breakdown', r.key)}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
-                  >{r.label}</button>
-                ))}
-                <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
-              </div>
-            )}
-            {csStep === 'spek' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
-                {spekSections.length === 0 && <span style={{ color: '#94a3b8', fontSize: 13 }}>Tidak ada section</span>}
-                {spekSections.map(s => (
-                  <button key={s.name} onClick={() => { setCsSection(s.name); setCsStep('spekSection'); }}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
-                  >{s.name}</button>
-                ))}
-                <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
-              </div>
-            )}
-            {csStep === 'spekSection' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
-                {spekSections.find(s => s.name === csSection)?.rows.map(r => (
-                  <button key={r.alias} onClick={() => setCalcSource('Spek', null, csSection, r.alias)}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
-                  >{r.label || r.alias}</button>
-                ))}
-                <button onClick={() => setCsStep('spek')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
-              </div>
-            )}
-            {csStep === 'cnc' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {[{key:'p_cnc',label:'P CNC'},{key:'l_cnc',label:'L CNC'},{key:'ukuran_cnc',label:'Ukuran CNC'}].map(r => (
-                  <button key={r.key} onClick={() => setCalcSource('CNC', r.key)}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
-                  >{r.label}</button>
-                ))}
-                <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
-              </div>
-            )}
-            {csStep === 'report' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {[{key:'qty_order',label:'Qty Order'},{key:'qty_produksi',label:'Qty Produksi'},{key:'total_part',label:'Total Part'}].map(r => (
-                  <button key={r.key} onClick={() => setCalcSource('Report', r.key)}
-                    style={{ background: '#f3f4f6', border: '0.5px solid #ddd', padding: '8px 12px', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: 13 }}
-                  >{r.label}</button>
-                ))}
-                <button onClick={() => setCsStep('type')} style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}>← Kembali</button>
-              </div>
-            )}
+            <button
+              onClick={openCalcSource}
+              style={{ display: 'block', width: '100%', background: 'none', border: 'none', padding: '8px 16px', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >Input Calculate Source</button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Right-click context menu */}
-      {ctxMenu && (
-        <div
-          style={{
-            position: 'fixed', top: ctxMenu.y, left: ctxMenu.x,
-            background: '#fff', border: '0.5px solid #ccc', borderRadius: 6,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 2001, minWidth: 160, padding: '4px 0',
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <button
-            onClick={openCalcSource}
-            style={{ display: 'block', width: '100%', background: 'none', border: 'none', padding: '8px 16px', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
-            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-          >Input Calculate Source</button>
-        </div>
-      )}
-
-      {/* Click outside to close context menu */}
-      {ctxMenu && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, background: 'transparent' }} onClick={closeCtxMenu} />}
+        {/* Click outside to close context menu */}
+        {ctxMenu && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, background: 'transparent' }} onClick={closeCtxMenu} />}
       </div>
     </div>
   );

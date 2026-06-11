@@ -47,7 +47,7 @@ export function syncCategoriesWithSpek(categories = [], spec = {}, stock = []) {
 
   return categories.map(cat => {
     // Sync both formula categories ('tf') and grid UI dropdown categories ('lap_luar', 'lap_dalam')
-    if (cat.code === 'tf' || cat.code === 'lap_luar' || cat.code === 'lap_dalam') {
+    if (cat.code === 'tf' || cat.code === 'lap_luar' || cat.code === 'lap_dalam' || cat.code === 'hpl') {
       const newItems = (cat.items || []).map(item => {
         if (typeof item === 'object' && item.code !== undefined && item.code !== null) {
           const aliasKey = TF_MAP[String(item.code)];

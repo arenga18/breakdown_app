@@ -431,7 +431,7 @@ export function calculateBomRows(processedData, spec, stock, bomTemplate) {
       } else if (varName === 'mled02' || varName === 'mprf1' || varName === 'mlis1' || varName === 'liskaca') {
         // Anodize proses rakit bars
         qty = Math.ceil(getAnodizeBarSum(rawName) / 2.8);
-      } else if (varName.startsWith('fr_')) {
+      } else if (/^fr_?\d+$/.test(varName)) {
         // Frame Alu. profiles
         qty = Math.ceil(getProfileLengthSum(rawName) / 2.8);
       } else if (varName === 'acrylic_mled') {

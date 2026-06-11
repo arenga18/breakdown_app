@@ -124,7 +124,7 @@ export default function SubModulTemplatePage({ modul, parts, setupItems = [], ca
                  const rowNum = isParent ? 1 : (item._idx !== undefined ? item._idx : idx + 1) + 1;
                  const colLetter = getColLetter(key);
                  const cellCoord = `${colLetter}${rowNum}`;
-                 const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
+                 const centerCols = ['F', 'I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
                  const textAlign = centerCols.includes(colLetter) ? 'center' : 'right';
 
                  // Evaluate formula
@@ -137,38 +137,42 @@ export default function SubModulTemplatePage({ modul, parts, setupItems = [], ca
                    setupItems
                  );
 
-                 // Auto-derive dynamic lookup values for hardware, profiling, anodizing from partsData
-                 const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize'];
-                 if (!isParent && !item[key] && lookupKeys.includes(key)) {
-                   const compName = evaluateFormula(item.komp, [header, ...data], spec, header, 0, setupItems);
-                   const defaultVal = getPartDefaultValue(compName, key);
-                   if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
-                     evaluatedVal = defaultVal;
-                   }
-                 }
-
-                 // Auto-derive dynamic thickness for empty finishing layer thickness cells
-                 if (!isParent && !item[key]) {
-                   if (key === 't_luar') {
-                     const lFinEval = evaluateFormula(item.l_fin, [header, ...data], spec, header, 0, setupItems);
-                     let resolvedLapLuar = '';
-                     if (!isFinishingEmpty(lFinEval)) {
-                       resolvedLapLuar = resolveLapisanFromCode(lFinEval, spec?.categories || []) || '';
-                     }
-                     if (resolvedLapLuar) {
-                       evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapLuar, buildAliasMap(spec)), spec?.categories || []);
-                     }
-                   } else if (key === 't_dalam') {
-                     const dFinEval = evaluateFormula(item.d_fin, [header, ...data], spec, header, 0, setupItems);
-                     let resolvedLapDalam = '';
-                     if (!isFinishingEmpty(dFinEval)) {
-                       resolvedLapDalam = resolveLapisanFromCode(dFinEval, spec?.categories || []) || '';
-                     }
-                     if (resolvedLapDalam) {
-                       evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapDalam, buildAliasMap(spec)), spec?.categories || []);
-                     }
-                   }
-                 }
+                 if (!isParent && key === 'no') {
+                    const compName = evaluateFormula(item.komp, [header, ...data], spec, header, 0, setupItems);
+                    const setupMatch = setupItems.find(s => s.name?.trim().toLowerCase() === compName?.trim().toLowerCase());
+                    if (setupMatch) {
+                      evaluatedVal = setupMatch.no;
+                    } else {
+                      evaluatedVal = item.no || '...';
+                    }
+                  } else if (!isParent && (!item[key] || item[key] === '...')) {
+                    const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize', 'minifix', 'dowel'];
+                    if (lookupKeys.includes(key)) {
+                      const compName = evaluateFormula(item.komp, [header, ...data], spec, header, 0, setupItems);
+                      const defaultVal = getPartDefaultValue(compName, key);
+                      if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
+                        evaluatedVal = defaultVal;
+                      }
+                    } else if (key === 't_luar') {
+                      const lFinEval = evaluateFormula(item.l_fin, [header, ...data], spec, header, 0, setupItems);
+                      let resolvedLapLuar = '';
+                      if (!isFinishingEmpty(lFinEval)) {
+                        resolvedLapLuar = resolveLapisanFromCode(lFinEval, spec?.categories || []) || '';
+                      }
+                      if (resolvedLapLuar) {
+                        evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapLuar, buildAliasMap(spec)), spec?.categories || []);
+                      }
+                    } else if (key === 't_dalam') {
+                      const dFinEval = evaluateFormula(item.d_fin, [header, ...data], spec, header, 0, setupItems);
+                      let resolvedLapDalam = '';
+                      if (!isFinishingEmpty(dFinEval)) {
+                        resolvedLapDalam = resolveLapisanFromCode(dFinEval, spec?.categories || []) || '';
+                      }
+                      if (resolvedLapDalam) {
+                        evaluatedVal = getFinishingThickness(resolveAlias(resolvedLapDalam, buildAliasMap(spec)), spec?.categories || []);
+                      }
+                    }
+                  }
 
                  return (
                      <FormulaInput 

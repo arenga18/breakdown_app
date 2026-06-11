@@ -38,8 +38,24 @@ const emptyInfo = { tanggal: '', norekap: '', estimator: '', koord: '', kontrak:
 
 function makeVals(sections) {
   const vals = {};
-  sections.forEach(sec => sec.rows.forEach(row => { vals[sec.name + '||' + row.label] = ''; }));
+  sections.forEach(sec => sec.rows.forEach((row, ri) => {
+    vals[makeRowKey(sec.name, sec.rows, row, ri)] = '';
+  }));
   return vals;
+}
+
+/**
+ * Generate a unique key for a spek row.
+ * - For rows with a unique label in their section: returns `"SecName||Label"` (unchanged, backward-compat).
+ * - For rows with a duplicate label: appends `||alias` (or `||ri` fallback) to disambiguate.
+ */
+function makeRowKey(secName, sectionRows, row, ri) {
+  const dupeCount = sectionRows.filter(r => r.label === row.label).length;
+  if (dupeCount > 1) {
+    // Use the row's built-in alias as the unique suffix; fall back to index
+    return secName + '||' + row.label + '||' + (row.alias || String(ri));
+  }
+  return secName + '||' + row.label;
 }
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
@@ -155,8 +171,8 @@ export default function SpekPage({ speks, sections, categories, stock = [], modu
     const nextAliases = { ...(spek.aliases || {}) };
     let changed = false;
     sections.forEach(sec => {
-      sec.rows.forEach(row => {
-        const key = sec.name + '||' + row.label;
+      sec.rows.forEach((row, ri) => {
+        const key = makeRowKey(sec.name, sec.rows, row, ri);
         if (row.alias && !nextAliases[key]) { nextAliases[key] = row.alias; changed = true; }
       });
     });
@@ -284,8 +300,8 @@ export default function SpekPage({ speks, sections, categories, stock = [], modu
       const nextAliases = { ...(currentSpek.aliases || {}) };
       let changed = false;
       sections.forEach(sec => {
-        sec.rows.forEach(row => {
-          const key = sec.name + '||' + row.label;
+        sec.rows.forEach((row, ri) => {
+          const key = makeRowKey(sec.name, sec.rows, row, ri);
           if (row.alias && !nextAliases[key]) { nextAliases[key] = row.alias; changed = true; }
         });
       });
@@ -525,7 +541,7 @@ export default function SpekPage({ speks, sections, categories, stock = [], modu
                       <>
                         {tableColHeader}
                         {sec.rows.map((row, ri) => {
-                          const key = sec.name + '||' + row.label;
+                          const key = makeRowKey(sec.name, sec.rows, row, ri);
                           const isCustom = localKodes[key] !== undefined && localKodes[key] !== '';
                           const isComputedStandard = !isCustom && ['lap_blk_pintu', 'lap_inv_kab', 'lap_pintu_mlp'].includes(row.alias);
                           let curVal = localVals[key] !== undefined ? localVals[key] : '';

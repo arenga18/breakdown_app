@@ -116,8 +116,9 @@ export async function syncStateWithDB(key, prev, next, state, setState) {
       }
     }
 
-    // Created
-    const created = nArr.filter(n => !pArr.some(p => p.id === n.id));
+    // Created: only projects with a numeric temp ID need to be created in DB.
+    // Projects with a UUID string were already created directly (see createProject in ProjectPage.js).
+    const created = nArr.filter(n => !pArr.some(p => p.id === n.id) && typeof n.id === 'number');
     for (const p of created) {
       console.log(`➕ DB Create Project: ${p.name}`);
       const res = await api.post('/projects', {
@@ -132,6 +133,13 @@ export async function syncStateWithDB(key, prev, next, state, setState) {
           ...prev,
           projects: (prev.projects || []).map(x => x.id === p.id ? { ...x, id: res.id, breakdown: p.breakdown || [] } : x)
         }));
+        // If the browser URL still references the old temp ID, swap it to the
+        // real UUID so ProjectPage's activeProject lookup doesn't go undefined
+        // and trigger a spurious redirect back to the project list.
+        const currentHash = window.location.hash;
+        if (currentHash.includes(String(p.id))) {
+          window.location.hash = currentHash.replace(String(p.id), String(res.id));
+        }
         // Save breakdown if any
         if (p.breakdown && p.breakdown.length > 0) {
           await saveProjectBreakdown(res.id, p.breakdown, state, setState).catch(console.error);

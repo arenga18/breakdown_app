@@ -1,5 +1,8 @@
+import { initialState } from '../initialState.js';
+
 /**
  * Resolves alias references (=aliasKey or @aliasKey) against a spec's resolved aliases.
+
  * Non-alias values are returned as-is.
  * 
  * @param {string} val - value from partsData, e.g. "=lapisan3" or "Ply"
@@ -254,9 +257,38 @@ function buildAliasMapRaw(spec = {}, useValueForAliases = false) {
   const categories = spec.categories || [];
   const aliasMap = {};
 
+  // Build fallback aliases from initialState.tplSections if missing in project spec.aliases
+  const mergedAliases = { ...specAliases };
+  if (initialState && Array.isArray(initialState.tplSections)) {
+    initialState.tplSections.forEach(sec => {
+      let secNames = [sec.name];
+      if (sec.name === 'Spesifikasi Lapisan / Fin.') {
+        secNames = ['Spesifikasi Lapisan / Fin.', 'Spesifikasi Lapisan', 'Lapisan Standard'];
+      }
+      secNames.forEach(secName => {
+        if (Array.isArray(sec.rows)) {
+          sec.rows.forEach((row, ri) => {
+            if (!row.alias) return;
+            const dupeCount = sec.rows.filter(r => r.label === row.label).length;
+            let key;
+            if (dupeCount > 1) {
+              key = secName + '||' + row.label + '||' + (row.alias || String(ri));
+            } else {
+              key = secName + '||' + row.label;
+            }
+            if (!mergedAliases[key]) {
+              mergedAliases[key] = row.alias;
+            }
+          });
+        }
+      });
+    });
+  }
+
   const { nameToCode, codeToName } = buildCodeNameMaps(categories);
   aliasMap._nameToCode = nameToCode;
   aliasMap._codeToName = codeToName;
+
 
   // Helper: register sebuah alias key dalam semua variasi format
   function registerAlias(alias, val) {
@@ -274,7 +306,7 @@ function buildAliasMapRaw(spec = {}, useValueForAliases = false) {
   Object.entries(specVals).forEach(([key, val]) => {
     const parts = key.split('||');
     const label = parts[parts.length - 1].toUpperCase().replace(/\s+/g, '_');
-    const customAlias = specAliases[key];
+    const customAlias = mergedAliases[key];
 
     // Use code if available in spec.kodes, otherwise try category name-to-code mapping, otherwise use value
     const valOrKode = useValueForAliases

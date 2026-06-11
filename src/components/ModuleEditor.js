@@ -207,7 +207,6 @@ function ModuleEditor({
       if (part) {
         if (part.val) {
           updates.bid = part.val;
-          updates.no = part.val;
         }
         if (part.code) updates.cat = part.code;
         if (part.ks) updates.kode = part.ks;
@@ -256,7 +255,7 @@ function ModuleEditor({
 
         const setup = setupItems.find(s => s.name.toLowerCase() === valKomp.toLowerCase());
         if (setup) {
-          next[idx].no = setup.no !== '•' && setup.no !== '-' ? setup.no : '...';
+          next[idx].no = setup.no;
           if (!part) {
             next[idx].kode = setup.ks || '';
           }
@@ -271,7 +270,7 @@ function ModuleEditor({
 
         const setup = setupItems.find(s => s.name.toLowerCase() === valKomp.toLowerCase());
         if (setup) {
-          next[idx].no = setup.no !== '•' && setup.no !== '-' ? setup.no : '...';
+          next[idx].no = setup.no;
           if (!part) {
             next[idx].kode = setup.ks || '';
           }
@@ -341,8 +340,8 @@ function ModuleEditor({
       ...emptyRow,
       type: 'Set_up',
       komp: sub.name,
-      kode: '',
-      no: '',
+      kode: subKode || '',
+      no: subNo || '',
       ...shiftedHeader
     };
 

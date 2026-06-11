@@ -5,7 +5,7 @@ import { buildNamedRanges } from '../utils/buildNamedRanges';
 import { COL_MAP, getColLetter } from '../utils/colMap';
 import ModuleEditor from './ModuleEditor';
 import { FormulaInput } from './SharedModuleTable';
-import { resolveLapisanFromCode, getFinishingThickness, isFinishingEmpty } from '../utils/breakdownCalc';
+import { resolveLapisanFromCode, getFinishingThickness, getPartDefaultValue, isFinishingEmpty } from '../utils/breakdownCalc';
 import { resolveAlias, buildAliasMap } from '../utils/resolveAlias';
 import VariablesPanel from './VariablesPanel';
 
@@ -166,7 +166,7 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
     if (!match) return;
     const colLetter = match[1];
     const rowNum = parseInt(match[2]);
-    const itemIdx = rowNum - 2;
+    const itemIdx = rowNum - 1;
     const item = dataRef.current[itemIdx];
 
     if (item) {
@@ -440,12 +440,27 @@ export default function BreakdownPage({ data, parts, moduls = [], subModuls = []
                     const rowNum = (item._idx !== undefined ? item._idx : idx) + 1;
                     const colLetter = getColLetter(key);
                     const cellCoord = `${colLetter}${rowNum}`;
-                    const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ'];
+                    const centerCols = ['F', 'I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ'];
                     const textAlign = centerCols.includes(colLetter) ? 'center' : 'right';
 
                     let evaluatedVal = evaluateFormula(item[key], data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
-                    if (!item[key]) {
-                      if (key === 't_luar') {
+                    if (key === 'no') {
+                      const compName = evaluateFormula(item.komp, data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
+                      const setupMatch = setupItems.find(s => s.name?.trim().toLowerCase() === compName?.trim().toLowerCase());
+                      if (setupMatch) {
+                        evaluatedVal = setupMatch.no;
+                      } else {
+                        evaluatedVal = item.no || '...';
+                      }
+                    } else if (!item[key] || item[key] === '...') {
+                      const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize', 'minifix', 'dowel'];
+                      if (lookupKeys.includes(key)) {
+                        const compName = evaluateFormula(item.komp, data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
+                        const defaultVal = getPartDefaultValue(compName, key);
+                        if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
+                          evaluatedVal = defaultVal;
+                        }
+                      } else if (key === 't_luar') {
                         const lFinEval = evaluateFormula(item.l_fin, data, spec, group.parent, 0, setupItems, namedRanges, specAliases);
                         let resolvedLapLuar = '';
                         if (!isFinishingEmpty(lFinEval)) {

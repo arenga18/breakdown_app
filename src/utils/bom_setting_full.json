@@ -714,7 +714,7 @@
     "row_idx": 92,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C92,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_0",
+    "nama_barang": "=fr0",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C92,P)+SUMIF(PII,C92,P)+SUMIF(LI,C92,L)+SUMIF(LII,C92,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -723,7 +723,7 @@
     "row_idx": 93,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C93,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_1",
+    "nama_barang": "=fr1",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C93,P)+SUMIF(PII,C93,P)+SUMIF(LI,C93,L)+SUMIF(LII,C93,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -732,7 +732,7 @@
     "row_idx": 94,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C94,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_2",
+    "nama_barang": "=fr2",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C94,P)+SUMIF(PII,C94,P)+SUMIF(LI,C94,L)+SUMIF(LII,C94,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -741,7 +741,7 @@
     "row_idx": 95,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C95,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_3",
+    "nama_barang": "=fr3",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C95,P)+SUMIF(PII,C95,P)+SUMIF(LI,C95,L)+SUMIF(LII,C95,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -750,7 +750,7 @@
     "row_idx": 96,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C96,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_4",
+    "nama_barang": "=fr4",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C96,P)+SUMIF(PII,C96,P)+SUMIF(LI,C96,L)+SUMIF(LII,C96,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -759,7 +759,7 @@
     "row_idx": 97,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C97,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_5",
+    "nama_barang": "=fr5",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C97,P)+SUMIF(PII,C97,P)+SUMIF(LI,C97,L)+SUMIF(LII,C97,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -768,7 +768,7 @@
     "row_idx": 98,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C98,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_6",
+    "nama_barang": "=fr6",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C98,P)+SUMIF(PII,C98,P)+SUMIF(LI,C98,L)+SUMIF(LII,C98,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -777,7 +777,7 @@
     "row_idx": 99,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C99,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_7",
+    "nama_barang": "=fr7",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C99,P)+SUMIF(PII,C99,P)+SUMIF(LI,C99,L)+SUMIF(LII,C99,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -786,7 +786,7 @@
     "row_idx": 100,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C100,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_8",
+    "nama_barang": "=fr8",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C100,P)+SUMIF(PII,C100,P)+SUMIF(LI,C100,L)+SUMIF(LII,C100,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -795,7 +795,7 @@
     "row_idx": 101,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C101,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_9",
+    "nama_barang": "=fr9",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C101,P)+SUMIF(PII,C101,P)+SUMIF(LI,C101,L)+SUMIF(LII,C101,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -804,7 +804,7 @@
     "row_idx": 102,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C102,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=fr_10",
+    "nama_barang": "=fr10",
     "jml_formula": "=ROUNDUP(((SUMIF(PI,C102,P)+SUMIF(PII,C102,P)+SUMIF(LI,C102,L)+SUMIF(LII,C102,L))/2.8),0)",
     "satuan": "Btg",
     "keterangan": ""
@@ -1182,7 +1182,7 @@
     "row_idx": 144,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C144,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel1",
+    "nama_barang": "=rel1",
     "jml_formula": "=SUMIF(RelI,C144,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1191,7 +1191,7 @@
     "row_idx": 145,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C145,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel2",
+    "nama_barang": "=rel2",
     "jml_formula": "=SUMIF(RelI,C145,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1200,7 +1200,7 @@
     "row_idx": 146,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C146,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel3",
+    "nama_barang": "=rel3",
     "jml_formula": "=SUMIF(RelI,C146,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1209,7 +1209,7 @@
     "row_idx": 147,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C147,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel4",
+    "nama_barang": "=rel4",
     "jml_formula": "=SUMIF(RelI,C147,Rel)",
     "satuan": "PSG",
     "keterangan": "\u25c4ganti merk Hafele"
@@ -1218,7 +1218,7 @@
     "row_idx": 148,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C148,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel5",
+    "nama_barang": "=rel5",
     "jml_formula": "=SUMIF(RelI,C148,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1227,7 +1227,7 @@
     "row_idx": 149,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C149,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel6",
+    "nama_barang": "=rel6",
     "jml_formula": "=SUMIF(RelI,C149,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1236,7 +1236,7 @@
     "row_idx": 150,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C150,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel7",
+    "nama_barang": "=rel7",
     "jml_formula": "=SUMIF(RelI,C150,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1245,7 +1245,7 @@
     "row_idx": 151,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C151,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel8",
+    "nama_barang": "=rel8",
     "jml_formula": "=SUMIF(RelI,C151,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1254,7 +1254,7 @@
     "row_idx": 152,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C152,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel9",
+    "nama_barang": "=rel9",
     "jml_formula": "=SUMIF(RelI,C152,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1263,7 +1263,7 @@
     "row_idx": 153,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C153,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel10",
+    "nama_barang": "=rel10",
     "jml_formula": "=SUMIF(RelI,C153,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1272,7 +1272,7 @@
     "row_idx": 154,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C154,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel11",
+    "nama_barang": "=rel11",
     "jml_formula": "=SUMIF(RelI,C154,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1281,7 +1281,7 @@
     "row_idx": 155,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C155,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel12",
+    "nama_barang": "=rel12",
     "jml_formula": "=SUMIF(RelI,C155,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1290,7 +1290,7 @@
     "row_idx": 156,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C156,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel13",
+    "nama_barang": "=rel13",
     "jml_formula": "=SUMIF(RelI,C156,Rel)",
     "satuan": "PSG",
     "keterangan": ""
@@ -1299,7 +1299,7 @@
     "row_idx": 157,
     "line_no": "",
     "id_barang": "=IFERROR(INDEX((ID),MATCH(C157,BARANG,0)),\"\u2026\")",
-    "nama_barang": "=_rel14",
+    "nama_barang": "=rel14",
     "jml_formula": "=SUMIF(RelI,C157,Rel)",
     "satuan": "PSG",
     "keterangan": ""

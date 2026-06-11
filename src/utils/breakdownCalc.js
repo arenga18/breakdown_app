@@ -29,7 +29,9 @@ export function getPartDefaultValue(compName, fieldKey) {
     q_engsel: 'q_engsel',
     // BD/BE flag: 1 = has hardware (auto-calculate), 0 = skip
     q_minifix: 'q_minifix',
-    q_dowel: 'q_dowel'
+    q_dowel: 'q_dowel',
+    minifix: 'minifix',
+    dowel: 'dowel'
   };
 
   const partKey = mapping[fieldKey];
@@ -486,12 +488,22 @@ export function formatEdgingDesc(p1, p2, l1, l2) {
   return parts.join(' + ');
 }
 
+export function getFieldValueWithFallback(resolvedItem, fieldKey, evaluatedCompName) {
+  const val = resolvedItem[fieldKey];
+  if (val !== undefined && val !== null && val !== '' && val !== '...') {
+    return val;
+  }
+  return getPartDefaultValue(evaluatedCompName, fieldKey);
+}
+
 /**
  * Calculates raw CNC size, digit codes, dynamic names, areas, and volumes for a single component.
  */
 export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   const specAliases = buildAliasMap(spec);
   const resolvedItem = resolveBreakdownItem(item, specAliases);
+  const setupItems = spec?.setupItems || [];
+  const evaluatedCompName = String(evaluateFormula(resolvedItem.komp || item.komp, rows, spec, parent, 0, setupItems) || '').trim();
 
   const categoriesList = spec?.categories || [];
   const gc = spec?.globalConstants || {};
@@ -501,15 +513,15 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   const tol_p = Number(gc.tol_p) || 40; // toleransi CNC panjang (mm)
   const tol_l = Number(gc.tol_l) || 40; // toleransi CNC lebar (mm)
 
-  const pVal = Math.round(parseFloat(evaluateFormula(resolvedItem.p, rows, spec, parent)) || 0);
-  const lVal = Math.round(parseFloat(evaluateFormula(resolvedItem.l, rows, spec, parent)) || 0);
-  const subVal = Math.round(parseFloat(evaluateFormula(resolvedItem.sub, rows, spec, parent)) || 1);
-  const jmlVal = Math.round(parseFloat(evaluateFormula(resolvedItem.jml, rows, spec, parent)) || 1);
+  const pVal = Math.round(parseFloat(evaluateFormula(resolvedItem.p, rows, spec, parent, 0, setupItems)) || 0);
+  const lVal = Math.round(parseFloat(evaluateFormula(resolvedItem.l, rows, spec, parent, 0, setupItems)) || 0);
+  const subVal = Math.round(parseFloat(evaluateFormula(resolvedItem.sub, rows, spec, parent, 0, setupItems)) || 1);
+  const jmlVal = Math.round(parseFloat(evaluateFormula(resolvedItem.jml, rows, spec, parent, 0, setupItems)) || 1);
   const qtyTotal = subVal * jmlVal;
 
   // Indonesian L & D Finishing code dynamic resolution
-  const lFinCode = String(evaluateFormula(resolvedItem.l_fin || item.l_fin, rows, spec, parent) || '').trim();
-  const dFinCode = String(evaluateFormula(resolvedItem.d_fin || item.d_fin, rows, spec, parent) || '').trim();
+  const lFinCode = String(evaluateFormula(resolvedItem.l_fin || item.l_fin, rows, spec, parent, 0, setupItems) || '').trim();
+  const dFinCode = String(evaluateFormula(resolvedItem.d_fin || item.d_fin, rows, spec, parent, 0, setupItems) || '').trim();
 
   let resolvedLapLuar = '';
   if (!isFinishingEmpty(lFinCode)) {
@@ -522,7 +534,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   }
 
   // Task 2.1 — Auto-derive Tebal Aktual: t = t_bhn + t_luar + t_dalam (Gap #4)
-  const tBhn = parseFloat(evaluateFormula(resolvedItem.t_bhn, rows, spec, parent)) || 0;
+  const tBhn = parseFloat(evaluateFormula(resolvedItem.t_bhn, rows, spec, parent, 0, setupItems)) || 0;
   
   let tLuarLayer = parseFloat(resolvedItem.t_luar) || 0;
   if (!tLuarLayer && resolvedLapLuar) {
@@ -537,7 +549,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   // Auto-derive if all three component fields are available, else fall back to manual t
   const tVal = (tBhn > 0)
     ? tBhn + tLuarLayer + tDalamLayer
-    : (parseFloat(evaluateFormula(resolvedItem.t, rows, spec, parent)) || 0);
+    : (parseFloat(evaluateFormula(resolvedItem.t, rows, spec, parent, 0, setupItems)) || 0);
 
   const isSetUp = resolvedItem.type === 'Set_up';
   if (isSetUp) {
@@ -579,10 +591,10 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   const dynamicEdgMap = buildEdgMap(categoriesList);
 
   // Evaluate code values dynamically first (matching Excel Z146, AA146, AB146, AC146)
-  const p1Code = String(evaluateFormula(resolvedItem.p1, rows, spec, parent) || '').trim();
-  const p2Code = String(evaluateFormula(resolvedItem.p2, rows, spec, parent) || '').trim();
-  const l1Code = String(evaluateFormula(resolvedItem.l1, rows, spec, parent) || '').trim();
-  const l2Code = String(evaluateFormula(resolvedItem.l2, rows, spec, parent) || '').trim();
+  const p1Code = String(evaluateFormula(resolvedItem.p1, rows, spec, parent, 0, setupItems) || '').trim();
+  const p2Code = String(evaluateFormula(resolvedItem.p2, rows, spec, parent, 0, setupItems) || '').trim();
+  const l1Code = String(evaluateFormula(resolvedItem.l1, rows, spec, parent, 0, setupItems) || '').trim();
+  const l2Code = String(evaluateFormula(resolvedItem.l2, rows, spec, parent, 0, setupItems) || '').trim();
 
   // Dynamically resolve names from code and category (Alu or Wood)
   const edgP1Name = resolveEdgingFromCode(p1Code, resolvedItem.cat, categoriesList);
@@ -636,7 +648,11 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   }
 
   // Auto component names
-  const cleanNo = resolvedItem.no ? String(resolvedItem.no).trim() : '';
+  const cleanNo = (() => {
+    const setupMatch = setupItems.find(s => s.name?.trim().toLowerCase() === evaluatedCompName.toLowerCase());
+    if (setupMatch) return String(setupMatch.no).trim();
+    return (resolvedItem.no && resolvedItem.no !== '...') ? String(resolvedItem.no).trim() : '';
+  })();
   const noPrefix = cleanNo ? `${cleanNo})` : '';
   let cleanKomp = resolvedItem.komp ? String(resolvedItem.komp).trim() : '';
   if (!cleanKomp && (resolvedItem.kabinet || resolvedItem.modul)) {
@@ -659,10 +675,13 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   const areaGross = areaGrossPanel * qtyTotal;
 
   // CSV CNC Format
-  const csvFormat = generateCSVFormat(
-    { ...resolvedItem, edg_p1: edgP1Name, edg_p2: edgP2Name, edg_l1: edgL1Name, edg_l2: edgL2Name },
-    pVal, lVal, formattedTVal, descLap, tP1, tP2, tL1, tL2, qtyTotal
-  );
+  const optVal = Number(evaluateFormula(resolvedItem.opt || item.opt, rows, spec, parent, 0, setupItems)) || 0;
+  const csvFormat = optVal === 1
+    ? generateCSVFormat(
+        { ...resolvedItem, edg_p1: edgP1Name, edg_p2: edgP2Name, edg_l1: edgL1Name, edg_l2: edgL2Name },
+        pVal, lVal, formattedTVal, descLap, tP1, tP2, tL1, tL2, qtyTotal
+      )
+    : ' ';
 
   // Task 2.2 — Auto-calc hardware Engsel, Minifix, Dowel
   // Logic mengikuti rumus Excel asli:
@@ -676,9 +695,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
 
   // ── Engsel ──────────────────────────────────────────────────────────────────
   // BD analog: field engsel (nama merk engsel) — jika kosong/0/'–' → tidak ada engsel
-  const resolvedEngselName = resolvedItem.engsel !== undefined && resolvedItem.engsel !== null && resolvedItem.engsel !== ''
-    ? resolvedItem.engsel
-    : getPartDefaultValue(resolvedItem.komp, 'engsel');
+  const resolvedEngselName = getFieldValueWithFallback(resolvedItem, 'engsel', evaluatedCompName);
 
   let qEngselManual = 0;
   if (resolvedEngselName && resolvedEngselName !== '0' && resolvedEngselName !== '-') {
@@ -686,7 +703,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
     if (!isNaN(parseNum) && parseNum > 0) {
       qEngselManual = parseNum;
     } else {
-      qEngselManual = Number(getPartDefaultValue(resolvedItem.komp, 'q_engsel')) || 0;
+      qEngselManual = Number(getFieldValueWithFallback(resolvedItem, 'q_engsel', evaluatedCompName)) || 0;
     }
   }
 
@@ -702,10 +719,8 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   // ── Minifix @ ───────────────────────────────────────────────────────────────
   // Setara Excel Kolom BD (flag: 0 = tidak ada, 1 = ada minifix)
   // Rumus: =IF($BD172=0;0;IF($L172<150;2;ROUNDUP($L172/fm;0)*2))*$Q172
-  const rawMinifixFlag = resolvedItem.q_minifix !== undefined && resolvedItem.q_minifix !== null && resolvedItem.q_minifix !== ''
-    ? resolvedItem.q_minifix
-    : getPartDefaultValue(resolvedItem.komp, 'q_minifix');
-  const minifixFlag = Number(rawMinifixFlag) || 0; // BD column: 0 = skip
+  const rawMinifixName = getFieldValueWithFallback(resolvedItem, 'minifix', evaluatedCompName);
+  const minifixFlag = (rawMinifixName && rawMinifixName !== '0' && rawMinifixName !== '-') ? 1 : 0;
 
   let minifixTotal = 0;
   if (minifixFlag !== 0 && lVal > 0) {
@@ -717,10 +732,8 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   // ── Dowel @ ─────────────────────────────────────────────────────────────────
   // Setara Excel Kolom BE (flag: 0 = tidak ada, 1 = ada dowel)
   // Rumus: =IF($BE172=0;0;IF($L172<150;2;ROUNDUP($L172/fd;0)*2))*$Q172
-  const rawDowelFlag = resolvedItem.q_dowel !== undefined && resolvedItem.q_dowel !== null && resolvedItem.q_dowel !== ''
-    ? resolvedItem.q_dowel
-    : getPartDefaultValue(resolvedItem.komp, 'q_dowel');
-  const dowelFlag = Number(rawDowelFlag) || 0; // BE column: 0 = skip
+  const rawDowelName = getFieldValueWithFallback(resolvedItem, 'dowel', evaluatedCompName);
+  const dowelFlag = (rawDowelName && rawDowelName !== '0' && rawDowelName !== '-') ? 1 : 0;
 
   let dowelTotal = 0;
   if (dowelFlag !== 0 && lVal > 0) {
@@ -730,9 +743,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   }
 
   // Rel
-  const resolvedRelName = resolvedItem.rel !== undefined && resolvedItem.rel !== null && resolvedItem.rel !== ''
-    ? resolvedItem.rel
-    : getPartDefaultValue(resolvedItem.komp, 'rel');
+  const resolvedRelName = getFieldValueWithFallback(resolvedItem, 'rel', evaluatedCompName);
 
   let qRelManual = 0;
   if (resolvedRelName && resolvedRelName !== '0' && resolvedRelName !== '-') {
@@ -740,14 +751,12 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
     if (!isNaN(parseNum) && parseNum > 0) {
       qRelManual = parseNum;
     } else {
-      qRelManual = Number(getPartDefaultValue(resolvedItem.komp, 'q_rel')) || 0;
+      qRelManual = Number(getFieldValueWithFallback(resolvedItem, 'q_rel', evaluatedCompName)) || 0;
     }
   }
 
   // Dormec
-  const resolvedDormecName = resolvedItem.dormec !== undefined && resolvedItem.dormec !== null && resolvedItem.dormec !== ''
-    ? resolvedItem.dormec
-    : getPartDefaultValue(resolvedItem.komp, 'dormec');
+  const resolvedDormecName = getFieldValueWithFallback(resolvedItem, 'dormec', evaluatedCompName);
 
   let qDormecManual = 0;
   if (resolvedDormecName && resolvedDormecName !== '0' && resolvedDormecName !== '-') {
@@ -755,19 +764,15 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
     if (!isNaN(parseNum) && parseNum > 0) {
       qDormecManual = parseNum;
     } else {
-      qDormecManual = Number(getPartDefaultValue(resolvedItem.komp, 'q_dormec')) || 0;
+      qDormecManual = Number(getFieldValueWithFallback(resolvedItem, 'q_dormec', evaluatedCompName)) || 0;
     }
   }
 
   // Siku
-  const resolvedSiku = resolvedItem.q_siku !== undefined && resolvedItem.q_siku !== null && resolvedItem.q_siku !== ''
-    ? resolvedItem.q_siku
-    : getPartDefaultValue(resolvedItem.komp, 'q_siku');
+  const resolvedSiku = getFieldValueWithFallback(resolvedItem, 'q_siku', evaluatedCompName);
 
   // Screw
-  const resolvedScrew = resolvedItem.q_screw !== undefined && resolvedItem.q_screw !== null && resolvedItem.q_screw !== ''
-    ? resolvedItem.q_screw
-    : getPartDefaultValue(resolvedItem.komp, 'q_screw');
+  const resolvedScrew = getFieldValueWithFallback(resolvedItem, 'q_screw', evaluatedCompName);
 
   const hardware = {
     engsel: engselTotal,
@@ -789,9 +794,7 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
   const propHarga = (!resolvedItem.bhn || resolvedItem.bhn === '0') ? 0 : (((pVal * lVal * qtyTotal) / (2400 * 1200)) + 0.1);
 
   // Anodize qty
-  const resolvedAnodize = resolvedItem.q_anodize !== undefined && resolvedItem.q_anodize !== null && resolvedItem.q_anodize !== ''
-    ? resolvedItem.q_anodize
-    : getPartDefaultValue(resolvedItem.komp, 'q_anodize');
+  const resolvedAnodize = getFieldValueWithFallback(resolvedItem, 'q_anodize', evaluatedCompName);
   const qAnodizeStd = Number(resolvedAnodize) || 0;
 
   return {
@@ -824,15 +827,15 @@ export function calcBreakdownItem(item, rows = [], spec = {}, parent = {}) {
     t_l2: tL2,
     
     // Dynamic lookup fields resolved from partsData
-    profil3: resolvedItem.profil3 || getPartDefaultValue(resolvedItem.komp, 'profil3'),
-    profil2: resolvedItem.profil2 || getPartDefaultValue(resolvedItem.komp, 'profil2'),
-    profil: resolvedItem.profil || getPartDefaultValue(resolvedItem.komp, 'profil'),
-    siku_joint: resolvedItem.siku_joint || getPartDefaultValue(resolvedItem.komp, 'siku_joint'),
-    screw_jf: resolvedItem.screw_jf || getPartDefaultValue(resolvedItem.komp, 'screw_jf'),
-    v: resolvedItem.v || getPartDefaultValue(resolvedItem.komp, 'v'),
-    v2: resolvedItem.v2 || getPartDefaultValue(resolvedItem.komp, 'v2'),
-    h: resolvedItem.h || getPartDefaultValue(resolvedItem.komp, 'h'),
-    anodize: resolvedItem.anodize || getPartDefaultValue(resolvedItem.komp, 'anodize'),
+    profil3: getFieldValueWithFallback(resolvedItem, 'profil3', evaluatedCompName),
+    profil2: getFieldValueWithFallback(resolvedItem, 'profil2', evaluatedCompName),
+    profil: getFieldValueWithFallback(resolvedItem, 'profil', evaluatedCompName),
+    siku_joint: getFieldValueWithFallback(resolvedItem, 'siku_joint', evaluatedCompName),
+    screw_jf: getFieldValueWithFallback(resolvedItem, 'screw_jf', evaluatedCompName),
+    v: getFieldValueWithFallback(resolvedItem, 'v', evaluatedCompName),
+    v2: getFieldValueWithFallback(resolvedItem, 'v2', evaluatedCompName),
+    h: getFieldValueWithFallback(resolvedItem, 'h', evaluatedCompName),
+    anodize: getFieldValueWithFallback(resolvedItem, 'anodize', evaluatedCompName),
     
     // Resolved edging names (overwrite raw codes from autoFill)
     edg_p1: edgP1Name,

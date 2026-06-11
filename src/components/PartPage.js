@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { buildAliasMap, resolveAlias } from '../utils/resolveAlias';
+import { buildAliasMap, resolveAlias, resolvePartRow } from '../utils/resolveAlias';
 import { s, Modal, FormGroup, FormRow } from './UI';
 
 const COLUMNS = [
@@ -53,7 +53,7 @@ function Cell({ value, displayValue, type, bold, width, isEditing, onStartEdit, 
     return (
       <input
         ref={inputRef}
-        type={type === 'number' ? 'number' : 'text'}
+        type="text"
         value={local}
         style={{
           width: '100%', boxSizing: 'border-box',
@@ -72,6 +72,19 @@ function Cell({ value, displayValue, type, bold, width, isEditing, onStartEdit, 
     );
   }
 
+  // Formula display logic:
+  // - If value starts with '=' it's a formula.
+  // - If resolveAlias resolved it to a different value (displayValue ≠ value): show the resolved value in blue + formula in tooltip.
+  // - If it could not be resolved (displayValue === value): show formula string as-is in blue (unresolved indicator).
+  const isFormula = typeof value === 'string' && value.startsWith('=');
+  const resolvedSuccessfully = isFormula && displayValue !== undefined && String(displayValue) !== String(value);
+  const shownText = resolvedSuccessfully
+    ? String(displayValue)          // resolved → tampilkan hasilnya
+    : (isFormula ? value : (displayValue ?? value ?? ''));  // unresolved → tampilkan formula
+  const tooltipText = resolvedSuccessfully
+    ? String(value) + ' → ' + String(displayValue)         // hover: formula → hasil
+    : String(value ?? '');
+
   return (
     <div
       onDoubleClick={onStartEdit}
@@ -80,11 +93,54 @@ function Cell({ value, displayValue, type, bold, width, isEditing, onStartEdit, 
         fontSize: 12, fontWeight: bold ? 600 : 400,
         height: ROW_HEIGHT, lineHeight: ROW_HEIGHT + 'px',
         cursor: 'default', userSelect: 'none',
+        color: isFormula ? '#2563eb' : 'inherit',
       }}
-      title={displayValue !== value ? String(value ?? '') + ' → ' + String(displayValue ?? '') : String(value ?? '')}
+      title={tooltipText}
     >
-      {displayValue ?? value ?? ''}
+      {shownText}
     </div>
+  );
+}
+
+// Drag-to-resize handle rendered inside each <th>
+function ResizeHandle({ colKey, onResizeCol }) {
+  const startX = useRef(null);
+  const startW = useRef(null);
+
+  const onMouseDown = useCallback((e) => {
+    e.preventDefault();
+    startX.current = e.clientX;
+    startW.current = null; // will be set from current colWidths on first move
+
+    const onMove = (ev) => {
+      if (startW.current === null) {
+        // Read actual rendered width from the th element
+        const th = e.target.closest('th');
+        startW.current = th ? th.offsetWidth : 80;
+      }
+      const delta = ev.clientX - startX.current;
+      const newW = Math.max(40, startW.current + delta);
+      onResizeCol(colKey, newW);
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [colKey, onResizeCol]);
+
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0,
+        width: 5, cursor: 'col-resize',
+        background: 'transparent',
+        zIndex: 2,
+      }}
+      title="Drag to resize"
+    />
   );
 }
 
@@ -120,7 +176,7 @@ const PartRow = React.memo(function PartRow({ item, resolvedItem, rowIdx, dataId
 });
 
 // Virtual scroll container
-function VirtualTable({ rows, editCell, onStartEdit, onCommit, onDelete, colWidths, rv }) {
+function VirtualTable({ rows, editCell, onStartEdit, onCommit, onDelete, colWidths, onResizeCol, rv }) {
   const containerRef = useRef(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(600);
@@ -156,8 +212,9 @@ function VirtualTable({ rows, editCell, onStartEdit, onCommit, onDelete, colWidt
         <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f9f9f7' }}>
           <tr>
             {COLUMNS.map(col => (
-              <th key={col.key} style={{ ...s.th, padding: '10px 8px', fontWeight: 600, borderBottom: '0.5px solid #ddd', textAlign: 'left', whiteSpace: 'nowrap', width: colWidths[col.key] }}>
+              <th key={col.key} style={{ ...s.th, padding: '10px 8px', fontWeight: 600, borderBottom: '0.5px solid #ddd', textAlign: 'left', whiteSpace: 'nowrap', width: colWidths[col.key], position: 'relative', userSelect: 'none' }}>
                 {col.label}
+                <ResizeHandle colKey={col.key} onResizeCol={onResizeCol} />
               </th>
             ))}
             <th style={{ ...s.th, width: 40, padding: '10px 4px', borderBottom: '0.5px solid #ddd' }}>Aksi</th>
@@ -167,9 +224,9 @@ function VirtualTable({ rows, editCell, onStartEdit, onCommit, onDelete, colWidt
           {paddingTop > 0 && <tr><td colSpan={COLUMNS.length + 1} style={{ height: paddingTop, padding: 0 }} /></tr>}
           {visibleRows.map((item, i) => {
             const dataIdx = rows.indexOf(item); // preserve original index for mutations
-            // Buat resolvedItem: nilai =varname di-resolve untuk display
+            // Buat resolvedItem: tiap field di-resolve dengan map yang sesuai (kode vs nama)
             const resolvedItem = rv ? Object.fromEntries(
-              Object.entries(item).map(([k, v]) => [k, rv(v)])
+              Object.entries(item).map(([k, v]) => [k, rv(v, k)])
             ) : item;
             return (
               <PartRow
@@ -194,16 +251,23 @@ function VirtualTable({ rows, editCell, onStartEdit, onCommit, onDelete, colWidt
 }
 
 export default function PartPage({ data, onChange, spec = {}, readOnly = false }) {
-  const aliasMap = useMemo(() => buildAliasMap(spec), [spec]);
-  // Resolve nilai "=varname" untuk display — data asli tidak berubah
-  const rv = useCallback((val) => {
-    if (typeof val === "string" && val.startsWith("=")) {
-      const key = val.slice(1).trim();
-      const resolved = aliasMap[key] ?? aliasMap[key.toLowerCase()] ?? aliasMap[key.toUpperCase()];
-      return resolved !== undefined ? resolved : val;
-    }
-    return val;
-  }, [aliasMap]);
+  // Dua alias map:
+  // - aliasMapCodes: kode numerik (untuk kolom edging: l, d, p1, p2, l1, l2)
+  // - aliasMapValues: nama/value human-readable (untuk kolom lain: bhn, dll)
+  const aliasMapCodes  = useMemo(() => buildAliasMap(spec, false), [spec]);
+  const aliasMapValues = useMemo(() => buildAliasMap(spec, true),  [spec]);
+
+  // Kolom-kolom yang harus menampilkan KODE numerik (edging thickness codes)
+  const CODE_COLS = useMemo(() => new Set(['l', 'd', 'p1', 'p2', 'l1', 'l2']), []);
+
+  // rv: resolve formula/alias untuk display — data asli tidak berubah
+  // colKey menentukan map mana yang dipakai (kode vs nama)
+  const rv = useCallback((val, colKey) => {
+    if (typeof val !== 'string' || !val.startsWith('=')) return val;
+    const map = CODE_COLS.has(colKey) ? aliasMapCodes : aliasMapValues;
+    const resolved = resolveAlias(val, map);
+    return resolved !== val ? resolved : val;
+  }, [aliasMapCodes, aliasMapValues, CODE_COLS]);
   const [filter, setFilter] = useState('');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
@@ -262,7 +326,13 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
 
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
-  const colWidths = useMemo(() => Object.fromEntries(COLUMNS.map(c => [c.key, c.width])), []);
+  const [colWidths, setColWidths] = useState(
+    () => Object.fromEntries(COLUMNS.map(c => [c.key, c.width]))
+  );
+
+  const handleResizeCol = useCallback((colKey, newWidth) => {
+    setColWidths(prev => ({ ...prev, [colKey]: newWidth }));
+  }, []);
 
   return (
     <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
@@ -290,6 +360,7 @@ export default function PartPage({ data, onChange, spec = {}, readOnly = false }
             onCommit={handleCommit}
             onDelete={handleDelete}
             colWidths={colWidths}
+            onResizeCol={handleResizeCol}
             rv={rv}
           />
         )}

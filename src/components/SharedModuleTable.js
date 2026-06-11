@@ -114,9 +114,9 @@ export function SearchableCell({ value, resolvedValue, options, onSelect, fontWe
 
   const safeOptions = React.useMemo(() => {
     if (!Array.isArray(options)) return [];
-    return options
-      .map(o => o !== null && o !== undefined ? o.toString() : '')
-      .filter(o => o.trim() !== '');
+    return [...new Set(
+      options.map(o => o !== null && o !== undefined ? o.toString().trim() : '')
+    )].filter(o => o !== '');
   }, [options]);
 
   const filtered = safeOptions.filter(o => o.toLowerCase().includes(filterText)).slice(0, 15);
@@ -425,15 +425,7 @@ const SharedModuleTableRow = React.memo(React.forwardRef(({
       </td>
       <td style={cellStyle('E')} onMouseDown={(e) => handleMD(e, 'E')}><EditableCell item={item} idx={rowIdx} k="tpk" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
       <td style={cellStyle('F')} onMouseDown={(e) => handleMD(e, 'F')}>
-        {(() => {
-          const setupMatch = setupItems.find(s => s.name?.trim() === item.komp?.trim());
-          const noDisplay = setupMatch !== undefined ? (setupMatch.no ?? '...') : '...';
-          return (
-            <div style={{ width: '100%', minHeight: 18, fontSize: 13, textAlign: 'center', color: setupMatch ? '#111' : '#9ca3af' }}>
-              {noDisplay}
-            </div>
-          );
-        })()}
+        {getCellRenderer(item, rowIdx, 'no')}
       </td>
       <td style={cellStyle('G')} onMouseDown={(e) => handleMD(e, 'G')}><EditableCell item={item} idx={rowIdx} k="opt" onUpdateRow={onUpdateRow} isRefMode={isRefMode} /></td>
       <td className="has-dropdown" style={cellStyle('H')} onMouseDown={(e) => handleMD(e, 'H')}>
@@ -493,10 +485,10 @@ const SharedModuleTableRow = React.memo(React.forwardRef(({
                   if (partMatch.q_screw !== undefined) updates.q_screw = partMatch.q_screw;
                   if (partMatch.minifix !== undefined) updates.minifix = partMatch.minifix;
                   if (partMatch.dowel !== undefined) updates.dowel = partMatch.dowel;
-                  const setupMatch = setupItems.find(s => s.name?.trim() === cleanV);
+                  const setupMatch = setupItems.find(s => s.name?.trim().toLowerCase() === cleanV.toLowerCase());
                   if (setupMatch && setupMatch.no !== undefined) updates.no = setupMatch.no; else updates.no = '';
                 } else {
-                  const smatch = setupItems.find(s => s.name?.trim() === cleanV);
+                  const smatch = setupItems.find(s => s.name?.trim().toLowerCase() === cleanV.toLowerCase());
                   if (smatch) {
                     if (smatch.ks) updates.kode = smatch.ks;
                     if (smatch.no !== undefined) updates.no = smatch.no;
@@ -762,10 +754,11 @@ function SharedModuleTable({
   // This moves the heavy formula work out of each row render,
   // so row React.memo can skip re-rendering untouched rows.
   const calcResults = useMemo(() => {
+    const specWithSetup = { ...spec, setupItems };
     return items.map(item =>
-      item.komp ? calcBreakdownItem(item, rowsWithParent, spec, parent) : null
+      calcBreakdownItem(item, rowsWithParent, specWithSetup, parent)
     );
-  }, [items, rowsWithParent, spec, parent]);
+  }, [items, rowsWithParent, spec, parent, setupItems]);
 
   const [widths, setWidths] = useState([
     30,  // Row index column
@@ -883,15 +876,15 @@ function SharedModuleTable({
     const rowNum = (item._idx !== undefined ? item._idx : idx + rowOffset) + 1;
     const colLetter = getColLetter(key);
     const coord = `${colLetter}${rowNum}`;
-    const centerCols = ['I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
+    const centerCols = ['F', 'I', 'J', 'K', 'L', 'M', 'O', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AL', 'AM', 'AN', 'AO', 'AP', 'AQ', 'AR'];
     const textAlign = centerCols.includes(colLetter) ? 'center' : (isHeader ? 'center' : 'right');
 
     // Pass pre-built specAliases to avoid rebuilding inside evaluateFormula
     let evaluatedVal = evaluateFormula(item[key], rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
 
     // Auto-derive dynamic lookup values for hardware, profiling, anodizing from partsData
-    const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize'];
-    if (!isHeader && !item[key] && lookupKeys.includes(key)) {
+    const lookupKeys = ['profil3', 'profil2', 'profil', 'siku_joint', 'screw_jf', 'dormec', 'rel', 'engsel', 'v', 'v2', 'h', 'anodize', 'minifix', 'dowel'];
+    if (!isHeader && (!item[key] || item[key] === '...') && lookupKeys.includes(key)) {
       const compName = evaluateFormula(item.komp, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
       const defaultVal = getPartDefaultValue(compName, key);
       if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
@@ -899,8 +892,18 @@ function SharedModuleTable({
       }
     }
 
+    if (!isHeader && key === 'no') {
+      const compName = evaluateFormula(item.komp, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
+      const setupMatch = setupItems.find(s => s.name?.trim().toLowerCase() === compName?.trim().toLowerCase());
+      if (setupMatch) {
+        evaluatedVal = setupMatch.no;
+      } else {
+        evaluatedVal = item.no || '...';
+      }
+    }
+
     // Auto-derive dynamic thickness for empty finishing layer thickness cells
-    if (!isHeader && !item[key]) {
+    if (!isHeader && (!item[key] || item[key] === '...')) {
       if (key === 't_luar') {
         const lFinEval = evaluateFormula(item.l_fin, rowsWithParent, spec, isHeader ? {} : parent, 0, setupItems, {}, specAliases);
         let resolvedLapLuar = '';
